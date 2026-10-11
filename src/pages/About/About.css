@@ -1,0 +1,313 @@
+/* ================================================================
+   About Page
+   ================================================================ */
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-10);
+  max-width: 860px;
+}
+
+/* ── Section ── */
+.about__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.about__section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.about__section-title svg {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+.about__section-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ── Task cards (2-col) ── */
+.about__task-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+.about__task-card {
+  padding: var(--sp-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.about__task-card-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: var(--sp-2);
+}
+
+.about__task-card-type--regression {
+  color: var(--accent-blue);
+}
+
+.about__task-card-type--classification {
+  color: var(--accent-indigo);
+}
+
+.about__task-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+}
+
+.about__task-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── Feature / algorithm cards grid ── */
+.about__cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-4);
+}
+
+.about__feature-card,
+.about__algo-card {
+  padding: var(--sp-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.about__feature-name,
+.about__algo-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.about__feature-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+}
+
+.about__feature-desc,
+.about__algo-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.about__algo-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.about__algo-type--regression {
+  color: var(--accent-blue);
+}
+
+.about__algo-type--classification {
+  color: var(--accent-indigo);
+}
+
+/* ── Planned badge ── */
+.about__planned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 4px;
+  line-height: 1;
+  width: fit-content;
+}
+
+/* ── Metric table ── */
+.about__metric-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--sp-2);
+}
+
+.about__metrics-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.about__metric-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.about__metric-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 140px;
+  font-family: var(--font-mono);
+}
+
+.about__metric-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Workflow steps ── */
+.about__workflow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.about__workflow-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  position: relative;
+}
+
+.about__workflow-step-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.about__workflow-step-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.about__workflow-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding: 0 var(--sp-1);
+}
+
+/* ── Status list ── */
+.about__status-card {
+  padding: var(--sp-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.about__status-notice {
+  font-size: 14px;
+  color: var(--accent-yellow);
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  line-height: 1.6;
+}
+
+.about__status-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  list-style: none;
+}
+
+.about__status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.about__status-item svg {
+  flex-shrink: 0;
+}
+
+.about__status-item--done svg {
+  color: var(--accent-green);
+}
+
+.about__status-item--planned svg {
+  color: var(--text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .about__task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about__workflow {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .about__workflow-arrow {
+    transform: rotate(90deg);
+    padding: var(--sp-1) 0;
+  }
+
+  .about__cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about__metric-row {
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+
+  .about__metric-name {
+    min-width: unset;
+  }
+}

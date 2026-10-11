@@ -1,0 +1,95 @@
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+/* ── Metric cards grid ── */
+.overview__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+}
+
+@media (max-width: 1024px) {
+  .overview__metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .overview__metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Info panels (quality + health summary) ── */
+.overview__panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+@media (max-width: 768px) {
+  .overview__panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Network quality card ── */
+.overview__quality {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.overview__quality-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overview__quality-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Health summary card ── */
+.overview__health {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.overview__health-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.overview__health-row:last-child {
+  border-bottom: none;
+}
+
+.overview__health-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.overview__health-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* ── Quick actions ── */
+.overview__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
