@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PageId, NetworkInput, AnalysisEntry } from './types';
 import { useAnalysis } from './hooks/useAnalysis';
+import { useTheme } from './hooks/useTheme';
 import { DEMO_VALUES } from './services/mockPredictionService';
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
@@ -12,6 +13,7 @@ import About from './pages/About/About';
 
 export default function App() {
   const [activePage, setActivePage] = useState<PageId>('overview');
+  const { theme, toggleTheme } = useTheme();
 
   const {
     history,
@@ -44,8 +46,8 @@ export default function App() {
       {/* Sidebar navigation */}
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
 
-      {/* Top Header bar */}
-      <Header />
+      {/* Top Header bar with Theme Toggle */}
+      <Header theme={theme} onToggleTheme={toggleTheme} />
 
       {/* Main active view container */}
       <main className="app-main">

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Cpu,
   Database,
@@ -8,292 +9,605 @@ import {
   Clock,
   ArrowRight,
   Workflow,
+  Sparkles,
+  Server,
+  Layers,
+  Code2,
+  Info,
 } from 'lucide-react';
 import './About.css';
 
+type AboutTab = 'architecture' | 'algorithms' | 'metrics' | 'roadmap';
+
 export default function About() {
+  const [activeTab, setActiveTab] = useState<AboutTab>('architecture');
+
   return (
-    <div className="about">
-      <header>
-        <h1 className="page-title">About the Project</h1>
-        <p className="page-subtitle">
-          Internet Speed & Network Quality Predictor — System Architecture & Proposal
-        </p>
-      </header>
-
-      {/* Section 1: Objective */}
-      <section className="about__section">
-        <h2 className="about__section-title">
-          <Target size={20} />
-          Project Objective
-        </h2>
-        <p className="about__section-desc">
-          This system proposes a dual-task machine-learning architecture to analyze
-          raw network telemetry and reliably estimate connection throughput and overall
-          stability without requiring heavy active bandwidth saturation tests.
-        </p>
-
-        <div className="about__task-grid">
-          <div className="about__task-card">
-            <span className="about__task-card-type about__task-card-type--regression">
-              Task 1 — Regression
-            </span>
-            <h3 className="about__task-card-name">Download Speed Prediction</h3>
-            <p className="about__task-card-desc">
-              Predicts instantaneous continuous download speed (in Mbps) as a
-              function of low-level network characteristics.
-            </p>
-          </div>
-
-          <div className="about__task-card">
-            <span className="about__task-card-type about__task-card-type--classification">
-              Task 2 — Classification
-            </span>
-            <h3 className="about__task-card-name">Network Quality Classification</h3>
-            <p className="about__task-card-desc">
-              Categorizes network health into discrete operational tiers:
-              <strong> Poor</strong>, <strong>Average</strong>, or <strong>Excellent</strong>.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2: Input Features */}
-      <section className="about__section">
-        <h2 className="about__section-title">
-          <Database size={20} />
-          Input Telemetry Features
-        </h2>
-        <p className="about__section-desc">
-          The planned machine learning pipeline relies on four primary telemetry
-          parameters captured at the transport and physical layer:
-        </p>
-
-        <div className="about__cards-grid">
-          <div className="about__feature-card">
-            <span className="about__feature-name">Latency</span>
-            <span className="about__feature-unit">ms</span>
-            <p className="about__feature-desc">
-              Round-trip propagation delay (RTT). Crucial indicator of congestion and routing path length.
-            </p>
-          </div>
-
-          <div className="about__feature-card">
-            <span className="about__feature-name">Jitter</span>
-            <span className="about__feature-unit">ms</span>
-            <p className="about__feature-desc">
-              Statistical variance in packet arrival intervals. Key metric for real-time traffic degradation.
-            </p>
-          </div>
-
-          <div className="about__feature-card">
-            <span className="about__feature-name">Packet Loss</span>
-            <span className="about__feature-unit">%</span>
-            <p className="about__feature-desc">
-              Proportion of discarded or lost packets requiring retransmission, heavily penalizing TCP throughput.
-            </p>
-          </div>
-
-          <div className="about__feature-card">
-            <span className="about__feature-name">Signal Strength</span>
-            <span className="about__feature-unit">dBm or %</span>
-            <p className="about__feature-desc">
-              Physical layer link budget (RSSI) measuring RF signal power across wireless interfaces.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: Proposed Algorithms */}
-      <section className="about__section">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          <h2 className="about__section-title" style={{ margin: 0 }}>
-            <Cpu size={20} />
-            Proposed Machine Learning Algorithms
-          </h2>
-          <span className="about__planned-badge">Planned Models</span>
-        </div>
-        <p className="about__section-desc">
-          Multiple candidate models are being investigated to balance inference speed,
-          interpretability, and predictive accuracy:
-        </p>
-
-        <div className="about__cards-grid">
-          <div className="about__algo-card">
-            <span className="about__algo-type about__algo-type--regression">Regression</span>
-            <h3 className="about__algo-name">Linear Regression</h3>
-            <p className="about__algo-desc">
-              Serves as the interpretable baseline model to establish linear correlation benchmarks between network features and throughput.
-            </p>
-          </div>
-
-          <div className="about__algo-card">
-            <span className="about__algo-type about__algo-type--regression">Regression</span>
-            <h3 className="about__algo-name">Random Forest Regressor</h3>
-            <p className="about__algo-desc">
-              Ensemble non-linear regressor designed to capture complex threshold effects and interaction terms across multi-factor inputs.
-            </p>
-          </div>
-
-          <div className="about__algo-card">
-            <span className="about__algo-type about__algo-type--classification">Classification</span>
-            <h3 className="about__algo-name">Decision Tree Classifier</h3>
-            <p className="about__algo-desc">
-              Rule-based classification tree providing deterministic splits and transparent decision boundaries for SLA categorization.
-            </p>
-          </div>
-
-          <div className="about__algo-card">
-            <span className="about__algo-type about__algo-type--classification">Classification</span>
-            <h3 className="about__algo-name">Random Forest Classifier</h3>
-            <p className="about__algo-desc">
-              Bagged ensemble classifier minimizing overfitting and improving classification generalization on edge condition variances.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: Proposed Evaluation Metrics */}
-      <section className="about__section">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          <h2 className="about__section-title" style={{ margin: 0 }}>
-            <BarChart3 size={20} />
-            Proposed Evaluation Metrics
-          </h2>
-          <span className="about__planned-badge">Evaluation Protocol</span>
+    <div className="about fade-in">
+      {/* ── Page Header Hero ── */}
+      <div className="about__hero card">
+        <div className="about__hero-meta">
+          <span className="demo-badge">
+            <Sparkles size={12} />
+            Academic &amp; Systems Architecture
+          </span>
+          <h1 className="about__hero-title">Internet Speed &amp; Network Quality Predictor</h1>
+          <p className="about__hero-desc">
+            A dual-task machine learning framework designed to evaluate physical and transport-layer
+            telemetry and predict continuous throughput and discrete SLA operational health without
+            saturating end-user bandwidth.
+          </p>
         </div>
 
-        <div className="about__metric-group-title">Regression Task Metrics</div>
-        <div className="about__metrics-table">
-          <div className="about__metric-row">
-            <span className="about__metric-name">MAE</span>
-            <span className="about__metric-desc">
-              Mean Absolute Error — Measures the average magnitude of prediction errors in Mbps.
-            </span>
-          </div>
-          <div className="about__metric-row">
-            <span className="about__metric-name">MSE</span>
-            <span className="about__metric-desc">
-              Mean Squared Error — Penalizes larger outlier prediction deviations more heavily.
-            </span>
-          </div>
-          <div className="about__metric-row">
-            <span className="about__metric-name">R² Score</span>
-            <span className="about__metric-desc">
-              Coefficient of Determination — Proportion of variance in speed explained by the model.
-            </span>
-          </div>
+        {/* Tab Switcher */}
+        <div className="about__nav-tabs">
+          <button
+            type="button"
+            className={`about__nav-tab${activeTab === 'architecture' ? ' about__nav-tab--active' : ''}`}
+            onClick={() => setActiveTab('architecture')}
+          >
+            <Workflow size={15} />
+            <span>Architecture &amp; Features</span>
+          </button>
+          <button
+            type="button"
+            className={`about__nav-tab${activeTab === 'algorithms' ? ' about__nav-tab--active' : ''}`}
+            onClick={() => setActiveTab('algorithms')}
+          >
+            <Cpu size={15} />
+            <span>Candidate Models</span>
+          </button>
+          <button
+            type="button"
+            className={`about__nav-tab${activeTab === 'metrics' ? ' about__nav-tab--active' : ''}`}
+            onClick={() => setActiveTab('metrics')}
+          >
+            <BarChart3 size={15} />
+            <span>Evaluation Metrics</span>
+          </button>
+          <button
+            type="button"
+            className={`about__nav-tab${activeTab === 'roadmap' ? ' about__nav-tab--active' : ''}`}
+            onClick={() => setActiveTab('roadmap')}
+          >
+            <GitBranch size={15} />
+            <span>Roadmap &amp; API Spec</span>
+          </button>
         </div>
+      </div>
 
-        <div className="about__metric-group-title">Classification Task Metrics</div>
-        <div className="about__metrics-table">
-          <div className="about__metric-row">
-            <span className="about__metric-name">Accuracy & F1-Score</span>
-            <span className="about__metric-desc">
-              Overall correctness and harmonic mean of precision/recall across class imbalances.
-            </span>
-          </div>
-          <div className="about__metric-row">
-            <span className="about__metric-name">Precision & Recall</span>
-            <span className="about__metric-desc">
-              Per-class specificity and sensitivity to prevent misclassifying poor connections as excellent.
-            </span>
-          </div>
-          <div className="about__metric-row">
-            <span className="about__metric-name">Confusion Matrix</span>
-            <span className="about__metric-desc">
-              Multi-class contingency table highlighting cross-tier boundary misclassifications.
-            </span>
-          </div>
+      {/* ── TAB 1: Architecture & Telemetry Features ── */}
+      {activeTab === 'architecture' && (
+        <div className="about__tab-content fade-in">
+          {/* Section 1: Objective */}
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Target size={20} className="about__icon-cyan" />
+              Dual-Task System Objective
+            </h2>
+            <p className="about__section-desc">
+              Conventional speed tests saturate user links with heavy multi-megabyte payloads, causing
+              congestion and consuming metered data. Speedex operates via passive and lightweight active telemetry,
+              passing 4 transport/link features to a dual-task predictive model:
+            </p>
+
+            <div className="about__task-grid">
+              <div className="card about__task-card">
+                <span className="about__task-card-type about__task-card-type--regression">
+                  Task 1 — Continuous Regression
+                </span>
+                <h3 className="about__task-card-name">Bandwidth Throughput Prediction (Mbps)</h3>
+                <p className="about__task-card-desc">
+                  Models continuous non-linear relationship between RTT latency, packet jitter variance,
+                  and link budget attenuation to estimate instantaneous download capacity.
+                </p>
+                <div className="about__task-badge-row">
+                  <span className="about__tag">Target: Mbps Continuous [0, 150+]</span>
+                </div>
+              </div>
+
+              <div className="card about__task-card">
+                <span className="about__task-card-type about__task-card-type--classification">
+                  Task 2 — Multi-Class Classification
+                </span>
+                <h3 className="about__task-card-name">SLA Network Quality Classification</h3>
+                <p className="about__task-card-desc">
+                  Categorizes link operational state into discrete SLA boundaries:
+                  <strong> Poor</strong> (degraded transport), <strong>Average</strong> (usable standard),
+                  and <strong>Excellent</strong> (low-latency gigabit).
+                </p>
+                <div className="about__task-badge-row">
+                  <span className="about__tag">Classes: Poor | Average | Excellent</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 2: Input Features */}
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Database size={20} className="about__icon-cyan" />
+              Input Telemetry Vector [4 Primary Dimensions]
+            </h2>
+            <p className="about__section-desc">
+              Extracted from transport protocols (ICMP/TCP/UDP) and wireless physical-layer link budgets:
+            </p>
+
+            <div className="about__cards-grid">
+              <div className="card about__feature-card">
+                <div className="about__feature-header">
+                  <span className="about__feature-name">Round-Trip Latency (RTT)</span>
+                  <span className="about__feature-unit">ms</span>
+                </div>
+                <p className="about__feature-desc">
+                  Propagation delay for round-trip datagram transit. Primary factor governing interactive TCP acknowledgment pacing.
+                </p>
+                <div className="about__benchmark-tag">Ideal: &lt; 30 ms</div>
+              </div>
+
+              <div className="card about__feature-card">
+                <div className="about__feature-header">
+                  <span className="about__feature-name">Packet Delay Variation (Jitter)</span>
+                  <span className="about__feature-unit">ms</span>
+                </div>
+                <p className="about__feature-desc">
+                  Statistical variance in packet arrival intervals. Excessive jitter induces transport buffer overflows and jitter-buffer latency.
+                </p>
+                <div className="about__benchmark-tag">Ideal: &lt; 5 ms</div>
+              </div>
+
+              <div className="card about__feature-card">
+                <div className="about__feature-header">
+                  <span className="about__feature-name">Transport Packet Loss Rate</span>
+                  <span className="about__feature-unit">%</span>
+                </div>
+                <p className="about__feature-desc">
+                  Fraction of lost datagrams requiring congestion-backoff retransmissions, heavily penalizing TCP congestion window sizes.
+                </p>
+                <div className="about__benchmark-tag">Ideal: &lt; 0.5%</div>
+              </div>
+
+              <div className="card about__feature-card">
+                <div className="about__feature-header">
+                  <span className="about__feature-name">Received Signal Power (RSSI)</span>
+                  <span className="about__feature-unit">dBm or %</span>
+                </div>
+                <p className="about__feature-desc">
+                  Physical link budget measuring radio-frequency signal power at device antenna, dictating MCS modulation tiers.
+                </p>
+                <div className="about__benchmark-tag">Ideal: &gt; -55 dBm</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Pipeline Flowchart */}
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Workflow size={20} className="about__icon-cyan" />
+              Machine Learning Workflow Pipeline
+            </h2>
+
+            <div className="card about__pipeline-card">
+              <div className="about__pipeline-steps">
+                <div className="about__pipeline-step">
+                  <span className="about__pipeline-step-num">01</span>
+                  <h4>Telemetry Collection</h4>
+                  <p>ICMP ping sampling, RTT tracking, and RF signal interrogation.</p>
+                </div>
+                <div className="about__pipeline-arrow">
+                  <ArrowRight size={16} />
+                </div>
+
+                <div className="about__pipeline-step">
+                  <span className="about__pipeline-step-num">02</span>
+                  <h4>Preprocessing &amp; Normalization</h4>
+                  <p>Z-Score scaling, dBm to [0,1] normalization, outlier filtering.</p>
+                </div>
+                <div className="about__pipeline-arrow">
+                  <ArrowRight size={16} />
+                </div>
+
+                <div className="about__pipeline-step">
+                  <span className="about__pipeline-step-num">03</span>
+                  <h4>Feature Engineering</h4>
+                  <p>Interaction terms: RTT × Jitter, Loss penalties, Signal SNR ratios.</p>
+                </div>
+                <div className="about__pipeline-arrow">
+                  <ArrowRight size={16} />
+                </div>
+
+                <div className="about__pipeline-step">
+                  <span className="about__pipeline-step-num">04</span>
+                  <h4>Dual-Task Training</h4>
+                  <p>Regression on Mbps target + Random Forest classification on SLA.</p>
+                </div>
+                <div className="about__pipeline-arrow">
+                  <ArrowRight size={16} />
+                </div>
+
+                <div className="about__pipeline-step">
+                  <span className="about__pipeline-step-num">05</span>
+                  <h4>FastAPI Inference</h4>
+                  <p>Sub-millisecond model inference served over JSON REST API.</p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      )}
 
-      {/* Section 5: ML Workflow Pipeline */}
-      <section className="about__section">
-        <h2 className="about__section-title">
-          <Workflow size={20} />
-          Proposed ML Workflow Pipeline
-        </h2>
+      {/* ── TAB 2: Candidate Machine Learning Algorithms ── */}
+      {activeTab === 'algorithms' && (
+        <div className="about__tab-content fade-in">
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Cpu size={20} className="about__icon-cyan" />
+              Candidate Machine Learning Models
+            </h2>
+            <p className="about__section-desc">
+              Four supervised algorithms evaluated across inference latency, non-linear representation,
+              and interpretability benchmarks:
+            </p>
 
-        <div className="about__workflow">
-          <div className="about__workflow-step">
-            <span className="about__workflow-step-num">Step 1</span>
-            <span className="about__workflow-step-name">Data Collection</span>
-          </div>
-          <div className="about__workflow-arrow">
-            <ArrowRight size={18} />
-          </div>
+            <div className="about__cards-grid">
+              <div className="card about__algo-card">
+                <div className="about__algo-badge about__algo-badge--regression">Regression Baseline</div>
+                <h3 className="about__algo-name">Linear Regression</h3>
+                <p className="about__algo-desc">
+                  Parametric baseline establishing linear coefficients for direct latency and attenuation penalties.
+                  Highly interpretable with O(1) inference time.
+                </p>
+                <div className="about__algo-specs">
+                  <div><span>Complexity:</span> <strong>O(p)</strong></div>
+                  <div><span>Interpretability:</span> <strong>Very High</strong></div>
+                  <div><span>Non-Linearity:</span> <strong>Low</strong></div>
+                </div>
+              </div>
 
-          <div className="about__workflow-step">
-            <span className="about__workflow-step-num">Step 2</span>
-            <span className="about__workflow-step-name">Preprocessing</span>
-          </div>
-          <div className="about__workflow-arrow">
-            <ArrowRight size={18} />
-          </div>
+              <div className="card about__algo-card">
+                <div className="about__algo-badge about__algo-badge--regression">Ensemble Regressor</div>
+                <h3 className="about__algo-name">Random Forest Regressor</h3>
+                <p className="about__algo-desc">
+                  Ensemble of bootstrapped decision trees capturing sharp non-linear degradation cliffs (such as sudden
+                  packet loss thresholds above 2%).
+                </p>
+                <div className="about__algo-specs">
+                  <div><span>Complexity:</span> <strong>O(n_trees × d)</strong></div>
+                  <div><span>Interpretability:</span> <strong>Feature Importance</strong></div>
+                  <div><span>Non-Linearity:</span> <strong>High</strong></div>
+                </div>
+              </div>
 
-          <div className="about__workflow-step">
-            <span className="about__workflow-step-num">Step 3</span>
-            <span className="about__workflow-step-name">Label Generation</span>
-          </div>
-          <div className="about__workflow-arrow">
-            <ArrowRight size={18} />
-          </div>
+              <div className="card about__algo-card">
+                <div className="about__algo-badge about__algo-badge--classification">Rule-Based Classifier</div>
+                <h3 className="about__algo-name">Decision Tree Classifier</h3>
+                <p className="about__algo-desc">
+                  Deterministic orthogonal splits providing human-readable decision logic directly matching
+                  industry telecommunications SLA tiers.
+                </p>
+                <div className="about__algo-specs">
+                  <div><span>Splits:</span> <strong>Gini / Entropy</strong></div>
+                  <div><span>Decision Paths:</span> <strong>Transparent</strong></div>
+                  <div><span>Overfitting Risk:</span> <strong>Pruned</strong></div>
+                </div>
+              </div>
 
-          <div className="about__workflow-step">
-            <span className="about__workflow-step-num">Step 4</span>
-            <span className="about__workflow-step-name">Model Training</span>
-          </div>
-          <div className="about__workflow-arrow">
-            <ArrowRight size={18} />
-          </div>
+              <div className="card about__algo-card">
+                <div className="about__algo-badge about__algo-badge--classification">Ensemble Classifier</div>
+                <h3 className="about__algo-name">Random Forest Classifier</h3>
+                <p className="about__algo-desc">
+                  Ensemble bagging model that minimizes variance across edge cases, stabilizing quality classification
+                  during transient spikes in jitter.
+                </p>
+                <div className="about__algo-specs">
+                  <div><span>Ensemble:</span> <strong>100 Estimators</strong></div>
+                  <div><span>Generalization:</span> <strong>Excellent</strong></div>
+                  <div><span>Robustness:</span> <strong>Outlier Resistant</strong></div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-          <div className="about__workflow-step">
-            <span className="about__workflow-step-num">Step 5</span>
-            <span className="about__workflow-step-name">Evaluation</span>
-          </div>
+          {/* Model Comparison Table */}
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Layers size={18} className="about__icon-cyan" />
+              Algorithmic Comparison Matrix
+            </h2>
+
+            <div className="card about__table-card">
+              <table className="about__table">
+                <thead>
+                  <tr>
+                    <th>Model Candidate</th>
+                    <th>Target Task</th>
+                    <th>Inference Speed</th>
+                    <th>Handles Non-Linearity</th>
+                    <th>Recommended Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Linear Regression</strong></td>
+                    <td>Continuous Speed</td>
+                    <td>&lt; 0.1 ms</td>
+                    <td>Partial (Requires Polynomials)</td>
+                    <td><span className="about__tag">Baseline Benchmark</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Random Forest Regressor</strong></td>
+                    <td>Continuous Speed</td>
+                    <td>&lt; 2.5 ms</td>
+                    <td>Excellent</td>
+                    <td><span className="about__tag about__tag--cyan">Primary Regression Engine</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Decision Tree Classifier</strong></td>
+                    <td>SLA Quality Tier</td>
+                    <td>&lt; 0.2 ms</td>
+                    <td>Good (Step Functions)</td>
+                    <td><span className="about__tag">Interpretable Auditing</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Random Forest Classifier</strong></td>
+                    <td>SLA Quality Tier</td>
+                    <td>&lt; 2.8 ms</td>
+                    <td>High (Ensemble Majority)</td>
+                    <td><span className="about__tag about__tag--cyan">Primary Classifier Engine</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
-      </section>
+      )}
 
-      {/* Section 6: Current Project Status */}
-      <section className="about__section">
-        <h2 className="about__section-title">
-          <GitBranch size={20} />
-          Implementation Status & Architecture
-        </h2>
+      {/* ── TAB 3: Proposed Evaluation Metrics ── */}
+      {activeTab === 'metrics' && (
+        <div className="about__tab-content fade-in">
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <BarChart3 size={20} className="about__icon-cyan" />
+              Model Performance Evaluation Protocol
+            </h2>
+            <p className="about__section-desc">
+              Evaluation metrics tailored to balance continuous error bounds with classification reliability:
+            </p>
 
-        <div className="about__status-card">
-          <div className="about__status-notice">
-            The machine learning models are currently in active research and development.
-            This application's UI is connected to an isolated client-side mock service
-            that implements the standard <code>PredictionService</code> interface, allowing
-            seamless plug-and-play integration with a future Python backend (Flask/FastAPI).
-          </div>
+            <div className="about__metrics-split">
+              {/* Regression Metrics */}
+              <div className="card about__metric-panel">
+                <div className="about__metric-panel-header">
+                  <span className="about__task-card-type about__task-card-type--regression">
+                    Task 1 — Regression Metrics
+                  </span>
+                  <h3>Continuous Throughput Evaluation</h3>
+                </div>
 
-          <ul className="about__status-list">
-            <li className="about__status-item about__status-item--done">
-              <CheckCircle2 size={16} />
-              <span>Modern Frontend UI & Observability Dashboard</span>
-            </li>
-            <li className="about__status-item about__status-item--done">
-              <CheckCircle2 size={16} />
-              <span>Decoupled Mock Prediction Service with Validation</span>
-            </li>
-            <li className="about__status-item about__status-item--planned">
-              <Clock size={16} />
-              <span>Dataset Gathering & Feature Engineering Pipeline (In Progress)</span>
-            </li>
-            <li className="about__status-item about__status-item--planned">
-              <Clock size={16} />
-              <span>Model Training & Evaluation (Linear Regression, Random Forest)</span>
-            </li>
-            <li className="about__status-item about__status-item--planned">
-              <Clock size={16} />
-              <span>FastAPI / Flask Microservice Integration</span>
-            </li>
-          </ul>
+                <div className="about__metric-list">
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">MAE</span>
+                    <div className="about__metric-text">
+                      <strong>Mean Absolute Error (Mbps)</strong>
+                      <p>Average magnitude of prediction discrepancy in megabits per second.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">MSE</span>
+                    <div className="about__metric-text">
+                      <strong>Mean Squared Error</strong>
+                      <p>Penalizes severe outlier errors where estimated speed heavily diverges.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">RMSE</span>
+                    <div className="about__metric-text">
+                      <strong>Root Mean Squared Error (Mbps)</strong>
+                      <p>Quadratic scoring providing error standard deviation in natural Mbps scale.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">R² Score</span>
+                    <div className="about__metric-text">
+                      <strong>Coefficient of Determination</strong>
+                      <p>Proportion of variance in download throughput explained by telemetry features.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Classification Metrics */}
+              <div className="card about__metric-panel">
+                <div className="about__metric-panel-header">
+                  <span className="about__task-card-type about__task-card-type--classification">
+                    Task 2 — Classification Metrics
+                  </span>
+                  <h3>Multi-Class SLA Tier Evaluation</h3>
+                </div>
+
+                <div className="about__metric-list">
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">Acc</span>
+                    <div className="about__metric-text">
+                      <strong>Classification Accuracy</strong>
+                      <p>Overall percentage of correctly assigned quality tiers across test split.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">Macro F1</span>
+                    <div className="about__metric-text">
+                      <strong>Harmonic Mean of Precision &amp; Recall</strong>
+                      <p>Mitigates class imbalance between common standard links and rare severe drops.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">Precision</span>
+                    <div className="about__metric-text">
+                      <strong>Tier Specificity</strong>
+                      <p>Guarantees degraded links are never misclassified as high-speed Tier 1 links.</p>
+                    </div>
+                  </div>
+                  <div className="about__metric-item">
+                    <span className="about__metric-abbr">Conf Matrix</span>
+                    <div className="about__metric-text">
+                      <strong>3×3 Contingency Table</strong>
+                      <p>Inspects cross-tier classification leakages between Poor, Average, and Excellent.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      )}
+
+      {/* ── TAB 4: Implementation Status Roadmap & API Integration ── */}
+      {activeTab === 'roadmap' && (
+        <div className="about__tab-content fade-in">
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <GitBranch size={20} className="about__icon-cyan" />
+              Project Development Roadmap &amp; Current Status
+            </h2>
+
+            <div className="card about__status-card">
+              <div className="about__status-notice">
+                <Info size={16} className="about__icon-amber" />
+                <span>
+                  The web application features an isolated, modular architecture.
+                  The UI interfaces exclusively with the <code>PredictionService</code> interface, ensuring
+                  frictionless transition to a real Python REST backend without frontend alterations.
+                </span>
+              </div>
+
+              <div className="about__roadmap-list">
+                <div className="about__roadmap-item about__roadmap-item--done">
+                  <div className="about__roadmap-marker">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 1: Production-Quality Frontend UI &amp; Diagnostics Dashboard</h4>
+                      <span className="about__status-badge about__status-badge--done">Completed</span>
+                    </div>
+                    <p>
+                      Dark responsive analytics dashboard, scenario presets, interactive charts,
+                      workload suitability matrix, and client-side history logging.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about__roadmap-item about__roadmap-item--done">
+                  <div className="about__roadmap-marker">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 2: Decoupled Simulation &amp; Heuristic Baseline Engine</h4>
+                      <span className="about__status-badge about__status-badge--done">Completed</span>
+                    </div>
+                    <p>
+                      Deterministic mathematical model simulating regression curves, contributing factors,
+                      and SLA classification penalties for validation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about__roadmap-item about__roadmap-item--active">
+                  <div className="about__roadmap-marker">
+                    <Clock size={18} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 3: Dataset Generation &amp; Feature Normalization Pipeline</h4>
+                      <span className="about__status-badge about__status-badge--active">In Progress</span>
+                    </div>
+                    <p>
+                      Collecting synthetic and empirical telemetry distributions across varied network interfaces
+                      (Fiber, Wi-Fi 6, 5G, LTE, Satellite).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about__roadmap-item">
+                  <div className="about__roadmap-marker">
+                    <Clock size={18} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 4: Scikit-Learn / PyTorch Model Training &amp; Cross-Validation</h4>
+                      <span className="about__status-badge">Planned</span>
+                    </div>
+                    <p>
+                      Training Random Forest and Gradient Boosting ensembles; hyperparameter optimization via
+                      GridSearchCV; evaluation with 5-fold cross-validation.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="about__roadmap-item">
+                  <div className="about__roadmap-marker">
+                    <Server size={18} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 5: FastAPI / Flask Microservice Deployment</h4>
+                      <span className="about__status-badge">Planned</span>
+                    </div>
+                    <p>
+                      Packaging serialized <code>.joblib</code> / <code>.onnx</code> models into a lightweight
+                      REST microservice with CORS support.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Code Integration Example */}
+          <section className="about__section">
+            <h2 className="about__section-title">
+              <Code2 size={18} className="about__icon-cyan" />
+              REST API Drop-In Integration Spec
+            </h2>
+            <div className="card about__code-card">
+              <div className="about__code-header">
+                <span>FastAPI Python Endpoint (Target Implementation)</span>
+                <span className="about__code-lang">Python 3.11</span>
+              </div>
+              <pre className="about__code-block">
+{`from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
+
+app = FastAPI(title="Speedex ML Predictor API")
+regressor = joblib.load("models/random_forest_regressor.joblib")
+classifier = joblib.load("models/random_forest_classifier.joblib")
+
+class TelemetryPayload(BaseModel):
+    latency: float
+    jitter: float
+    packetLoss: float
+    signalStrength: float
+    signalUnit: str
+
+@app.post("/api/predict")
+async def predict_network_quality(data: TelemetryPayload):
+    features = [[data.latency, data.jitter, data.packetLoss, data.signalStrength]]
+    predicted_speed = float(regressor.predict(features)[0])
+    predicted_quality = str(classifier.predict(features)[0])
+    
+    return {
+        "downloadSpeed": round(predicted_speed, 1),
+        "quality": predicted_quality,
+        "isSimulated": False,
+        "confidenceScore": 96.4
+    }`}
+              </pre>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

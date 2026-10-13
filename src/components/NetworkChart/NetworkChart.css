@@ -1,3 +1,7 @@
+/* ================================================================
+   NetworkChart Component Styles
+   ================================================================ */
+
 .network-chart {
   display: flex;
   flex-direction: column;
@@ -6,16 +10,29 @@
 
 .network-chart__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
+}
+
+.network-chart__title-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .network-chart__title {
-  font-size: 16px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.network-chart__title-icon {
+  color: var(--accent-cyan-light);
 }
 
 .network-chart__subtitle {
@@ -24,34 +41,137 @@
   margin-top: 2px;
 }
 
-.network-chart__body {
-  width: 100%;
-  height: 300px;
+.network-chart__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
 }
 
-/* Custom Recharts tooltip */
-.network-chart-tooltip {
-  background: var(--bg-secondary) !important;
-  border: 1px solid var(--border-light) !important;
-  border-radius: var(--radius-md) !important;
-  padding: var(--sp-3) var(--sp-4) !important;
-  box-shadow: var(--shadow-md) !important;
+.network-chart__range-selector {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 2px;
 }
 
-.network-chart-tooltip .recharts-tooltip-label {
-  color: var(--text-secondary) !important;
+.network-chart__range-btn {
+  padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  margin-bottom: var(--sp-1);
+  color: var(--text-muted);
+  border-radius: var(--radius-xs);
+  transition: all var(--duration-fast);
 }
 
-.network-chart-tooltip .recharts-tooltip-item {
-  font-size: 13px !important;
-  padding: 2px 0 !important;
+.network-chart__range-btn:hover {
+  color: var(--text-primary);
+}
+
+.network-chart__range-btn--active {
+  background: rgba(14, 165, 233, 0.15);
+  color: var(--accent-cyan-light);
+}
+
+/* ── Stats Strip ── */
+.network-chart__stats-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.network-chart__stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.network-chart__stat-icon--cyan {
+  color: #0ea5e9;
+}
+
+.network-chart__stat-icon--emerald {
+  color: #10b981;
+}
+
+.network-chart__stat-icon--indigo {
+  color: #818cf8;
+}
+
+.network-chart__stat-label {
+  color: var(--text-muted);
+}
+
+.network-chart__stat-value {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.network-chart__toggles {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.network-chart__toggle-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-color);
+  color: var(--text-dim);
+  background: transparent;
+  transition: all var(--duration-fast);
+}
+
+.network-chart__toggle-pill--active-cyan {
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.4);
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.network-chart__toggle-pill--active-emerald {
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.network-chart__toggle-pill--active-indigo {
+  color: #a5b4fc;
+  border-color: rgba(129, 140, 248, 0.4);
+  background: rgba(129, 140, 248, 0.1);
+}
+
+.network-chart__body {
+  width: 100%;
+  height: 310px;
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 768px) {
+  .network-chart__toggles {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
   .network-chart__body {
-    height: 220px;
+    height: 230px;
+  }
+
+  .network-chart__stats-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
   }
 }

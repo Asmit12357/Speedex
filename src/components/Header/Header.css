@@ -1,5 +1,5 @@
 /* ================================================================
-   Header
+   Header Component Styles
    ================================================================ */
 
 .header {
@@ -12,16 +12,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--sp-8);
-  background: rgba(11, 17, 32, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--header-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
   z-index: 50;
-  transition: left var(--duration-normal) var(--ease-out);
+  transition: left var(--duration-normal) var(--ease-out),
+              background-color var(--duration-normal) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out);
 }
 
 /* ── Left: titles ── */
-
 .header__left {
   display: flex;
   flex-direction: column;
@@ -29,14 +30,33 @@
   min-width: 0;
 }
 
+.header__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
 .header__title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.3;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.header__version-pill {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.3px;
+  font-family: var(--font-mono);
 }
 
 .header__subtitle {
@@ -45,26 +65,131 @@
   line-height: 1.3;
 }
 
-/* ── Right: badge ── */
-
+/* ── Right: Chips & Badges ── */
 .header__right {
   display: flex;
   align-items: center;
+  gap: var(--sp-3);
   flex-shrink: 0;
 }
 
-/* ── Responsive: <= 1024px ── */
+.header__status-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
 
+.header__icon-green {
+  color: var(--accent-green);
+}
+
+.header__icon-red {
+  color: var(--accent-red);
+}
+
+.header__status-text--offline {
+  color: var(--accent-red);
+  font-weight: 600;
+}
+
+.header__time-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* ── Theme Toggle Button ── */
+.header__theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.header__theme-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.header__theme-icon--sun {
+  color: var(--accent-yellow);
+}
+
+.header__theme-icon--moon {
+  color: var(--accent-indigo);
+}
+
+.header__theme-label {
+  font-size: 11px;
+}
+
+.header__demo-chip {
+  cursor: help;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: var(--accent-yellow);
+}
+
+.header__help-icon {
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+/* ── Responsive adjustments ── */
 @media (max-width: 1024px) {
   .header {
     left: 0;
     padding: 0 var(--sp-4);
-    padding-left: 56px; /* room for hamburger */
+    padding-left: 56px; /* Space for hamburger toggle */
+  }
+
+  .header__time-chip {
+    display: none;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .header__subtitle {
     display: none;
+  }
+
+  .header__status-chip {
+    display: none;
+  }
+
+  .header__theme-label {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header__version-pill {
+    display: none;
+  }
+  .header__title {
+    font-size: 14px;
   }
 }
