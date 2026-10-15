@@ -1,41 +1,23 @@
 import { useState } from 'react';
-import {
-  LayoutDashboard,
-  Activity,
-  BarChart3,
-  History,
-  Info,
-  Menu,
-  X,
-  Server,
-  Zap,
-} from 'lucide-react';
-import type { PageId } from '../../types';
+import { Menu, X, Gauge, Cpu } from 'lucide-react';
+import type { AnalysisEntry, PageId } from '../../types';
+import { NAV_ITEMS } from '../../navigation';
+import { latestMeasured } from '../../utils/entryMetrics';
+import { formatMbps, formatMs, timeAgo } from '../../utils/format';
+import { isModelConfigured } from '../../services/predictionService';
 import './Sidebar.css';
-
-interface NavItem {
-  id: PageId;
-  label: string;
-  icon: React.ElementType;
-  shortcut: string;
-  badge?: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard, shortcut: '1' },
-  { id: 'analyzer', label: 'Network Analyzer', icon: Activity, shortcut: '2', badge: 'Live' },
-  { id: 'results', label: 'Prediction Results', icon: BarChart3, shortcut: '3' },
-  { id: 'history', label: 'Analysis History', icon: History, shortcut: '4' },
-  { id: 'about', label: 'System Architecture', icon: Info, shortcut: '5' },
-];
 
 interface SidebarProps {
   activePage: PageId;
   onNavigate: (page: PageId) => void;
+  history: AnalysisEntry[];
+  isTesting: boolean;
 }
 
-function Sidebar({ activePage, onNavigate }: SidebarProps) {
+function Sidebar({ activePage, onNavigate, history, isTesting }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const last = latestMeasured(history);
+  const m = last?.measurement;
 
   const handleNavigate = (page: PageId) => {
     onNavigate(page);
@@ -45,9 +27,11 @@ function Sidebar({ activePage, onNavigate }: SidebarProps) {
   return (
     <>
       <button
+        type="button"
         className="sidebar__toggle"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={isOpen}
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -59,78 +43,87 @@ function Sidebar({ activePage, onNavigate }: SidebarProps) {
 
       <aside className={`sidebar${isOpen ? ' sidebar--open' : ''}`}>
         {/* Brand Header */}
-        <div
-          className="sidebar__brand"
-          onClick={() => handleNavigate('overview')}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="sidebar__brand-icon">
+        <button type="button" className="sidebar__brand" onClick={() => handleNavigate('overview')}>
+          <span className="sidebar__brand-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-          </div>
-          <div className="sidebar__brand-meta">
+          </span>
+          <span className="sidebar__brand-meta">
             <span className="sidebar__brand-name">Speedex</span>
             <span className="sidebar__brand-tag">Network Diagnostics</span>
-          </div>
-        </div>
+          </span>
+        </button>
 
         <div className="sidebar__section-label">
           <span>Navigation</span>
         </div>
 
-        <nav className="sidebar__nav">
+        <nav className="sidebar__nav" aria-label="Main">
           <ul className="sidebar__nav-list">
-            {NAV_ITEMS.map(({ id, label, icon: Icon, badge, shortcut }) => (
+            {NAV_ITEMS.map(({ id, label, icon: Icon, shortcut }) => (
               <li key={id}>
                 <button
+                  type="button"
                   className={`sidebar__nav-item${activePage === id ? ' sidebar__nav-item--active' : ''}`}
+                  aria-current={activePage === id ? 'page' : undefined}
+                  aria-keyshortcuts={shortcut}
                   onClick={() => handleNavigate(id)}
                 >
                   <span className="sidebar__nav-icon">
                     <Icon size={16} />
                   </span>
                   <span className="sidebar__nav-label">{label}</span>
-                  {badge && <span className="sidebar__nav-badge">{badge}</span>}
-                  <kbd className="sidebar__nav-kbd">{shortcut}</kbd>
+                  {id === 'speedtest' && isTesting && <span className="sidebar__nav-badge">Running</span>}
+                  <kbd className="sidebar__nav-kbd" aria-hidden="true">{shortcut}</kbd>
                 </button>
               </li>
             ))}
           </ul>
         </nav>
 
-        {/* Server & Edge Node Status Summary */}
         <div className="sidebar__footer">
           <div className="sidebar__gateway-card">
             <div className="sidebar__gateway-header">
-              <Server size={13} className="sidebar__gateway-icon" />
-              <span className="sidebar__gateway-title">Telemetry Gateway</span>
-              <span className="pulse-dot pulse-dot--online" style={{ marginLeft: 'auto' }} />
+              <Gauge size={13} className="sidebar__gateway-icon" />
+              <span className="sidebar__gateway-title">Last speed test</span>
+              {last && <span className="sidebar__gateway-when">{timeAgo(last.timestamp)}</span>}
             </div>
-            <div className="sidebar__gateway-details">
-              <div className="sidebar__gateway-row">
-                <span className="sidebar__gateway-key">Region</span>
-                <span className="sidebar__gateway-val">FRA-01 (Frankfurt)</span>
+            {m ? (
+              <div className="sidebar__gateway-details">
+                <div className="sidebar__gateway-row">
+                  <span className="sidebar__gateway-key">Down / Up</span>
+                  <span className="sidebar__gateway-val sidebar__gateway-val--highlight">
+                    {formatMbps(m.downloadMbps)} / {formatMbps(m.uploadMbps)}
+                  </span>
+                </div>
+                <div className="sidebar__gateway-row">
+                  <span className="sidebar__gateway-key">Latency</span>
+                  <span className="sidebar__gateway-val">{formatMs(m.latencyMs)} ms</span>
+                </div>
+                {m.edge && (
+                  <div className="sidebar__gateway-row">
+                    <span className="sidebar__gateway-key">Server</span>
+                    <span className="sidebar__gateway-val">{m.edge.colo}</span>
+                  </div>
+                )}
               </div>
-              <div className="sidebar__gateway-row">
-                <span className="sidebar__gateway-key">Model</span>
-                <span className="sidebar__gateway-val">Dual-Task XGBoost</span>
-              </div>
-              <div className="sidebar__gateway-row">
-                <span className="sidebar__gateway-key">Payload</span>
-                <span className="sidebar__gateway-val sidebar__gateway-val--highlight">0 MB (Passive)</span>
-              </div>
-            </div>
+            ) : (
+              <button type="button" className="sidebar__gateway-empty" onClick={() => handleNavigate('speedtest')}>
+                No tests yet. Run one →
+              </button>
+            )}
           </div>
 
           <div className="sidebar__status">
             <span className="sidebar__status-icon-wrap">
-              <Zap size={13} />
+              <Cpu size={13} />
             </span>
             <div className="sidebar__status-text">
-              <span className="sidebar__status-label">Engine Ready</span>
-              <span className="sidebar__status-sub">Passive Link Telemetry</span>
+              <span className="sidebar__status-label">Prediction model</span>
+              <span className="sidebar__status-sub">
+                {isModelConfigured ? 'Connected via API' : 'In development · estimates only'}
+              </span>
             </div>
           </div>
         </div>

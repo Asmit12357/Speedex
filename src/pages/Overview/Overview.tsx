@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { lazy, Suspense } from 'react';
 import {
   Zap,
   Clock,
   Activity,
-  AlertTriangle,
   ArrowRight,
   Server,
   Tv,
@@ -11,410 +10,402 @@ import {
   Video,
   HardDriveUpload,
   CheckCircle2,
+  AlertTriangle,
   Cpu,
+  Download,
+  Upload,
+  Gauge,
 } from 'lucide-react';
-import type { PageId } from '../../types';
-import { demoMetrics } from '../../data/demoData';
+import type { AnalysisEntry, PageId, SpeedTestMeasurement } from '../../types';
+import type { SpeedTestState } from '../../hooks/useSpeedTest';
+import { PRESET_SCENARIOS } from '../../data/scenarios';
+import { SPEED_TEST_PROFILES } from '../../services/speedTestService';
+import { formatEdge } from '../../services/edgeInfo';
+import { isModelConfigured } from '../../services/predictionService';
+import { formatMbps, formatMs, timeAgo } from '../../utils/format';
 import MetricCard from '../../components/MetricCard/MetricCard';
-import NetworkChart from '../../components/NetworkChart/NetworkChart';
 import './Overview.css';
 
+const NetworkChart = lazy(() => import('../../components/NetworkChart/NetworkChart'));
+
 interface OverviewProps {
+  history: AnalysisEntry[];
+  testState: SpeedTestState;
   onNavigate: (page: PageId) => void;
-  onRunDemo: () => void;
+  onStartTest: () => void;
+  onSelectScenario: (scenarioId: string) => void;
+  onOpenEntry: (entry: AnalysisEntry) => void;
 }
 
-const Overview: React.FC<OverviewProps> = ({ onNavigate, onRunDemo }) => {
-  const [isQuickTesting, setIsQuickTesting] = useState(false);
-  const [quickTestPhase, setQuickTestPhase] = useState<string>('');
+const SUITABILITY_ICON = {
+  streaming: Tv,
+  gaming: Gamepad2,
+  calls: Video,
+  transfers: HardDriveUpload,
+} as const;
 
-  const handleStartQuickDiagnostic = async () => {
-    setIsQuickTesting(true);
-    setQuickTestPhase('Probing Round-Trip Latency (ICMP)...');
-    await new Promise((r) => setTimeout(r, 450));
+const SCENARIO_COLOR: Record<string, string> = {
+  Broadband: 'var(--color-electric)',
+  Wireless: 'var(--accent-cyan)',
+  Cellular: 'var(--accent-purple)',
+  Satellite: 'var(--accent-amber)',
+  Degraded: 'var(--accent-red)',
+};
 
-    setQuickTestPhase('Sampling Packet Jitter Dispersion...');
-    await new Promise((r) => setTimeout(r, 450));
+type Trend = { trend: 'up' | 'down' | 'stable'; trendValue: string; trendTone: 'good' | 'bad' | 'neutral' };
 
-    setQuickTestPhase('Running Dual-Task ML Regressor...');
-    await new Promise((r) => setTimeout(r, 400));
-
-    setIsQuickTesting(false);
-    onRunDemo();
+/** Change vs the previous test. `higherIsBetter` decides the color, not the arrow. */
+function trendOf(now: number, before: number | undefined, unit: string, higherIsBetter: boolean): Trend | undefined {
+  if (before === undefined) return undefined;
+  const diff = Math.round((now - before) * 10) / 10;
+  if (Math.abs(diff) < Math.max(0.1, Math.abs(before) * 0.03)) {
+    return { trend: 'stable', trendValue: `±0 ${unit}`, trendTone: 'neutral' };
+  }
+  const good = diff > 0 === higherIsBetter;
+  return {
+    trend: diff > 0 ? 'up' : 'down',
+    trendValue: `${diff > 0 ? '+' : ''}${diff} ${unit}`,
+    trendTone: good ? 'good' : 'bad',
   };
+}
 
-  const qualityClass = `quality-badge quality-badge--${demoMetrics.quality.toLowerCase()}`;
+/** 0–100 health from latency, jitter and (when measured) loss. Same weights as before, now on real data. */
+function healthScore(m: SpeedTestMeasurement): number {
+  const latencyPenalty = Math.max(0, (m.latencyMs - 15) * 0.4);
+  const jitterPenalty = Math.max(0, (m.jitterMs - 1.5) * 1.5);
+  const lossPenalty = (m.packetLossPct ?? 0) * 8;
+  return Math.max(0, Math.min(100, Math.round(100 - latencyPenalty - jitterPenalty - lossPenalty)));
+}
 
-  // Dynamic SLA health score computation based on telemetry
-  const latencyPenalty = Math.max(0, (demoMetrics.latency - 15) * 0.4);
-  const jitterPenalty = Math.max(0, (demoMetrics.jitter - 1.5) * 1.5);
-  const lossPenalty = demoMetrics.packetLoss * 8;
-  const healthScore = Math.max(20, Math.min(100, Math.round(100 - latencyPenalty - jitterPenalty - lossPenalty)));
+const Overview = ({ history, testState, onNavigate, onStartTest, onSelectScenario, onOpenEntry }: OverviewProps) => {
+  const measured = history.filter((e) => e.measurement);
+  const latest = measured[0];
+  const previous = measured[1]?.measurement;
+  const m = latest?.measurement;
+  const running = testState.status === 'running';
+  const runningPct = running ? Math.round((testState.progress?.fraction ?? 0) * 100) : 0;
+
+  const score = m ? healthScore(m) : 0;
   const circumference = 264;
-  const strokeOffset = circumference - (circumference * (healthScore / 100));
+  const strokeOffset = circumference - circumference * (score / 100);
 
   return (
     <div className="overview fade-in">
-      {/* ── Page Hero Command Center ── */}
+      {/* ── Hero ── */}
       <section className="card overview__hero">
         <div className="overview__hero-left">
           <div className="overview__hero-badge">
             <span className="pulse-dot pulse-dot--online" />
-            <span className="eyebrow">Carrier Telemetry Gateway · Active</span>
+            <span className="eyebrow">Live speed test · Cloudflare edge</span>
           </div>
-          <h1 className="overview__hero-title">
-            Network Intelligence &amp; SLA Diagnostics
-          </h1>
+          <h1 className="overview__hero-title">Network Intelligence &amp; SLA Diagnostics</h1>
           <p className="overview__hero-desc">
-            Continuous passive transport telemetry monitoring coupled with dual-task machine learning. Accurately evaluates link throughput and ITU-T operational SLA tiers without flooding metered data connections.
+            Measure your real download, upload and latency against Cloudflare's global network, see what the
+            connection is good for, and track it over time. A model that predicts speed from passive signals is
+            in development.
           </p>
 
           <div className="overview__hero-meta">
             <div className="overview__meta-item">
-              <Server size={12} className="overview__meta-icon" />
-              <span>Target PoP: <strong>{demoMetrics.serverLocation}</strong></span>
+              <Clock size={12} className="overview__meta-icon" />
+              <span>Last test: <strong>{latest ? timeAgo(latest.timestamp) : 'none yet'}</strong></span>
             </div>
-            <div className="overview__meta-item">
-              <span>Local Gateway: <strong>{demoMetrics.ip}</strong></span>
-            </div>
+            {m?.edge && (
+              <div className="overview__meta-item">
+                <Server size={12} className="overview__meta-icon" />
+                <span>Server: <strong>{formatEdge(m.edge)}</strong></span>
+              </div>
+            )}
             <div className="overview__meta-item">
               <Cpu size={12} className="overview__meta-icon" />
-              <span>Model: <strong>Dual-Task XGBoost (R² 0.94)</strong></span>
+              <span>Model: <strong>{isModelConfigured ? 'Connected' : 'In development'}</strong></span>
             </div>
           </div>
         </div>
 
         <div className="overview__hero-right">
-          <button
-            type="button"
-            className="btn btn--primary btn--lg overview__test-btn"
-            onClick={handleStartQuickDiagnostic}
-            disabled={isQuickTesting}
-          >
-            {isQuickTesting ? (
-              <>
-                <span className="spinner" />
-                <span>{quickTestPhase}</span>
-              </>
-            ) : (
-              <>
-                <Zap size={15} />
-                <span>Run Live Diagnostic</span>
-              </>
-            )}
-          </button>
-          <span className="overview__hero-note">Passive telemetry probe · Zero payload overhead</span>
+          {running ? (
+            <button
+              type="button"
+              className="btn btn--secondary btn--lg overview__test-btn"
+              onClick={() => onNavigate('speedtest')}
+            >
+              <span className="spinner" />
+              <span>Test running · {runningPct}%</span>
+            </button>
+          ) : (
+            <button type="button" className="btn btn--primary btn--lg overview__test-btn" onClick={onStartTest}>
+              <Zap size={15} />
+              <span>{latest ? 'Run speed test again' : 'Run speed test'}</span>
+            </button>
+          )}
+          <span className="overview__hero-note">Quick test · {SPEED_TEST_PROFILES.quick.dataNote}</span>
         </div>
       </section>
 
-      {/* ── Metric Cards Grid ── */}
-      <section className="overview__metrics" aria-label="Key Performance Indicators">
+      {/* ── Latest numbers ── */}
+      <section className="overview__metrics" aria-label="Latest speed test">
+        <MetricCard
+          icon={<Download size={16} />}
+          label="Download"
+          value={m ? formatMbps(m.downloadMbps) : '—'}
+          unit="Mbps"
+          color="var(--accent-cyan)"
+          subtitle={m ? 'Measured, 90th percentile of requests' : 'Run a speed test to fill this in'}
+          benchmark="25+ for 4K"
+          {...(m && trendOf(m.downloadMbps, previous?.downloadMbps, 'Mbps', true))}
+        />
+
+        <MetricCard
+          icon={<Upload size={16} />}
+          label="Upload"
+          value={m ? formatMbps(m.uploadMbps) : '—'}
+          unit="Mbps"
+          color="var(--color-electric)"
+          subtitle={m ? 'Measured, 90th percentile of requests' : 'Run a speed test to fill this in'}
+          benchmark="10+ for calls"
+          {...(m && trendOf(m.uploadMbps, previous?.uploadMbps, 'Mbps', true))}
+        />
+
         <MetricCard
           icon={<Clock size={16} />}
-          label="Round-Trip Latency"
-          value={demoMetrics.latency}
+          label="Latency"
+          value={m ? formatMs(m.latencyMs) : '—'}
           unit="ms"
-          color="var(--accent-cyan)"
-          subtitle="Median response time across ICMP probes"
-          trend="down"
-          trendValue="-2.4ms"
-          benchmark="< 20ms Target"
+          color="var(--accent-purple)"
+          subtitle={m ? 'Median round trip while the link is idle' : 'Run a speed test to fill this in'}
+          benchmark="< 30 ms"
+          {...(m && trendOf(m.latencyMs, previous?.latencyMs, 'ms', false))}
         />
 
         <MetricCard
           icon={<Activity size={16} />}
-          label="Packet Jitter"
-          value={demoMetrics.jitter}
+          label="Jitter"
+          value={m ? formatMs(m.jitterMs) : '—'}
           unit="ms"
-          color="var(--color-electric)"
-          subtitle="Mean packet arrival dispersion variance"
-          trend="stable"
-          trendValue="0.1ms"
-          benchmark="< 5ms Target"
-        />
-
-        <MetricCard
-          icon={<AlertTriangle size={16} />}
-          label="Packet Loss"
-          value={demoMetrics.packetLoss}
-          unit="%"
           color="var(--accent-red)"
-          subtitle="Transport layer dropped packet ratio"
-          trend="stable"
-          trendValue="0.0%"
-          benchmark="< 0.5% Target"
-        />
-
-        <MetricCard
-          icon={<Zap size={16} />}
-          label="Predicted Throughput"
-          value={demoMetrics.downloadSpeed}
-          unit="Mbps"
-          color="var(--accent-purple)"
-          subtitle="Dual-task ML estimated download capacity"
-          trend="up"
-          trendValue="+12.0 Mbps"
-          benchmark="Tier-1 SLA"
+          subtitle={m ? 'Average change between latency samples' : 'Run a speed test to fill this in'}
+          benchmark="< 5 ms"
+          {...(m && trendOf(m.jitterMs, previous?.jitterMs, 'ms', false))}
         />
       </section>
 
-      {/* ── Historical Performance Trend Chart ── */}
-      <NetworkChart />
+      {/* ── Trend ── */}
+      <Suspense fallback={<div className="card overview__chart-placeholder" />}>
+        <NetworkChart history={history} onRunTest={onStartTest} />
+      </Suspense>
 
-      {/* ── Dual Panel Section: Quality & Suitability ── */}
+      {/* ── Quality & suitability ── */}
       <div className="overview__panels">
-        {/* Network Quality Card */}
         <div className="card overview__quality-card">
           <div className="overview__card-header">
             <div>
-              <span className="eyebrow">Service Level Compliance</span>
-              <h3 className="overview__card-title">Network Quality &amp; SLA Readiness</h3>
+              <span className="eyebrow">Connection health</span>
+              <h3 className="overview__card-title">Quality &amp; SLA readiness</h3>
             </div>
-            <span className={qualityClass}>{demoMetrics.quality}</span>
+            {latest && (
+              <span className={`quality-badge quality-badge--${latest.result.quality.toLowerCase()}`}>
+                {latest.result.quality}
+              </span>
+            )}
           </div>
 
-          <p className="overview__card-desc">
-            Dual-task classifier maps link characteristics to international telecommunication standards (ITU-T Y.1541).
-          </p>
+          {m ? (
+            <>
+              <p className="overview__card-desc">
+                Scored from your last test's latency, jitter{m.packetLossPct !== undefined ? ' and packet loss' : ''}, using
+                ITU-T Y.1541-style targets.
+              </p>
 
-          <div className="overview__quality-gauge-wrapper">
-            <div className="overview__gauge">
-              <svg viewBox="0 0 100 100" className="overview__gauge-svg">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  className="overview__gauge-bg"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  className="overview__gauge-fill"
-                  style={{ strokeDashoffset: strokeOffset }}
-                />
-              </svg>
-              <div className="overview__gauge-label">
-                <span className="overview__gauge-score">{healthScore}</span>
-                <span className="overview__gauge-max">/100</span>
-              </div>
-            </div>
-
-            <div className="overview__quality-details">
-              <div className="overview__health-box">
-                <div className="overview__health-title">
-                  <CheckCircle2 size={15} className="overview__icon-green" />
-                  <span>Carrier-Grade Stability Verified</span>
+              <div className="overview__quality-gauge-wrapper">
+                <div className="overview__gauge" role="img" aria-label={`Health score ${score} out of 100`}>
+                  <svg viewBox="0 0 100 100" className="overview__gauge-svg">
+                    <circle cx="50" cy="50" r="42" className="overview__gauge-bg" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="42"
+                      className="overview__gauge-fill"
+                      style={{ strokeDashoffset: strokeOffset }}
+                    />
+                  </svg>
+                  <div className="overview__gauge-label">
+                    <span className="overview__gauge-score">{score}</span>
+                    <span className="overview__gauge-max">/100</span>
+                  </div>
                 </div>
-                <p className="overview__health-text">
-                  Packet loss under 0.1% with latency well below SLA thresholds. Qualified for all high-concurrency and latency-critical cloud operations.
-                </p>
-              </div>
 
-              <div className="overview__sla-row">
-                <span className="overview__sla-item">Jitter SLA: <strong>PASS (&lt;5ms)</strong></span>
-                <span className="overview__sla-item">RTT SLA: <strong>PASS (&lt;30ms)</strong></span>
-                <span className="overview__sla-item">Loss SLA: <strong>PASS (&lt;0.5%)</strong></span>
+                <div className="overview__quality-details">
+                  <div className="overview__health-box">
+                    <div className="overview__health-title">
+                      {latest.result.quality === 'Poor' ? (
+                        <AlertTriangle size={15} className="overview__icon-warn" />
+                      ) : (
+                        <CheckCircle2 size={15} className="overview__icon-green" />
+                      )}
+                      <span>
+                        {latest.result.quality === 'Excellent' && 'Ready for demanding real-time work'}
+                        {latest.result.quality === 'Average' && 'Fine for everyday use'}
+                        {latest.result.quality === 'Poor' && 'Expect slowdowns and lag'}
+                      </span>
+                    </div>
+                    <p className="overview__health-text">{latest.result.explanation}</p>
+                  </div>
+
+                  <div className="overview__sla-row">
+                    <span className="overview__sla-item">
+                      Latency: <strong>{m.latencyMs < 30 ? 'PASS' : 'MISS'} (&lt;30 ms)</strong>
+                    </span>
+                    <span className="overview__sla-item">
+                      Jitter: <strong>{m.jitterMs < 5 ? 'PASS' : 'MISS'} (&lt;5 ms)</strong>
+                    </span>
+                    <span className="overview__sla-item">
+                      Loss:{' '}
+                      <strong>
+                        {m.packetLossPct === undefined ? 'NOT MEASURED' : `${m.packetLossPct < 0.5 ? 'PASS' : 'MISS'} (<0.5%)`}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
               </div>
+            </>
+          ) : (
+            <div className="overview__panel-empty">
+              <Gauge size={28} />
+              <p>Your connection health score appears after the first speed test.</p>
             </div>
-          </div>
+          )}
 
           <div className="overview__card-footer">
             <button
               type="button"
               className="btn btn--secondary btn--sm"
-              onClick={() => onNavigate('results')}
+              onClick={() => (latest ? onOpenEntry(latest) : onStartTest())}
             >
-              <span>View Full Prediction Breakdown</span>
+              <span>{latest ? 'Open full report' : 'Run speed test'}</span>
               <ArrowRight size={13} />
             </button>
           </div>
         </div>
 
-        {/* Workload Suitability Matrix */}
         <div className="card overview__suitability-card">
           <div className="overview__card-header">
             <div>
-              <span className="eyebrow">Protocol Suitability</span>
-              <h3 className="overview__card-title">Workload Readiness Matrix</h3>
+              <span className="eyebrow">What it's good for</span>
+              <h3 className="overview__card-title">Workload readiness</h3>
             </div>
-            <span className="tag-pill">Benchmark Calibrated</span>
+            {latest && <span className="tag-pill">Cloudflare AIM</span>}
           </div>
 
-          <p className="overview__card-desc">
-            Measured link capability compared against strict protocol and application bandwidth thresholds:
-          </p>
-
-          <div className="overview__suitability-list">
-            <div className="overview__suitability-item">
-              <div className="overview__suitability-left">
-                <div className="overview__suitability-icon">
-                  <Tv size={15} />
-                </div>
-                <div>
-                  <div className="overview__suitability-name">4K / 8K UHD HDR Streaming</div>
-                  <div className="overview__suitability-sub">Target &gt; 25 Mbps · Measured {demoMetrics.downloadSpeed} Mbps (3.7x Headroom)</div>
-                </div>
+          {latest?.result.suitability?.length ? (
+            <>
+              <p className="overview__card-desc">Based on your last measured test:</p>
+              <div className="overview__suitability-list">
+                {latest.result.suitability.map((item) => {
+                  const Icon = SUITABILITY_ICON[item.category as keyof typeof SUITABILITY_ICON] ?? Activity;
+                  return (
+                    <div key={item.category} className="overview__suitability-item">
+                      <div className="overview__suitability-left">
+                        <div className="overview__suitability-icon">
+                          <Icon size={15} />
+                        </div>
+                        <div className="overview__suitability-text">
+                          <div className="overview__suitability-name">{item.name}</div>
+                          <div className="overview__suitability-sub">{item.note}</div>
+                        </div>
+                      </div>
+                      <span className={`tag-pill ${item.suitable ? 'tag-pill--pass' : 'tag-pill--fail'}`}>
+                        {item.suitable ? 'Good' : 'Struggles'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-              <span className="tag-pill tag-pill--pass">Optimized</span>
+            </>
+          ) : (
+            <div className="overview__panel-empty">
+              <Tv size={28} />
+              <p>Streaming, gaming, video call and big-file ratings appear after the first speed test.</p>
             </div>
-
-            <div className="overview__suitability-item">
-              <div className="overview__suitability-left">
-                <div className="overview__suitability-icon">
-                  <Gamepad2 size={15} />
-                </div>
-                <div>
-                  <div className="overview__suitability-name">Competitive Cloud Gaming</div>
-                  <div className="overview__suitability-sub">Target &lt; 30ms RTT · Measured {demoMetrics.latency}ms / {demoMetrics.jitter}ms Jitter</div>
-                </div>
-              </div>
-              <span className="tag-pill tag-pill--pass">Ultra-Low Delay</span>
-            </div>
-
-            <div className="overview__suitability-item">
-              <div className="overview__suitability-left">
-                <div className="overview__suitability-icon">
-                  <Video size={15} />
-                </div>
-                <div>
-                  <div className="overview__suitability-name">HD Video Conferencing (WebRTC)</div>
-                  <div className="overview__suitability-sub">Target &lt; 1% Loss · Measured {demoMetrics.packetLoss}% Loss (Zero Glitch)</div>
-                </div>
-              </div>
-              <span className="tag-pill tag-pill--pass">Stable</span>
-            </div>
-
-            <div className="overview__suitability-item">
-              <div className="overview__suitability-left">
-                <div className="overview__suitability-icon">
-                  <HardDriveUpload size={15} />
-                </div>
-                <div>
-                  <div className="overview__suitability-name">Cloud Sync &amp; Datacenter Backup</div>
-                  <div className="overview__suitability-sub">Throughput-bound large file synchronization pipelines</div>
-                </div>
-              </div>
-              <span className="tag-pill tag-pill--pass">High Throughput</span>
-            </div>
-          </div>
+          )}
 
           <div className="overview__card-footer">
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              onClick={() => onNavigate('analyzer')}
-            >
-              <span>Test Custom Telemetry Parameters</span>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => onNavigate('analyzer')}>
+              <span>Estimate a different connection</span>
               <ArrowRight size={13} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── ML Dual-Task Architecture Quick Summary ── */}
+      {/* ── How it works ── */}
       <section className="card overview__ai-card">
         <div className="overview__ai-header">
           <div className="overview__ai-title-wrap">
-            <span className="eyebrow">Zero-Saturation Telemetry</span>
-            <h3 className="overview__ai-title">Dual-Task Predictive Machine Learning</h3>
+            <span className="eyebrow">How Speedex works</span>
+            <h3 className="overview__ai-title">Measure now, predict next</h3>
           </div>
-          <button
-            type="button"
-            className="btn btn--secondary btn--sm"
-            onClick={() => onNavigate('about')}
-          >
-            <span>Read ML Architecture Whitepaper</span>
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => onNavigate('about')}>
+            <span>Model roadmap</span>
             <ArrowRight size={13} />
           </button>
         </div>
 
-        <p className="overview__ai-desc">
-          Unlike legacy speed tests that saturate connections with 50+ MB dummy payloads, Speedex evaluates link health via lightweight passive telemetry. Four transport features feed a synchronized dual-task ML pipeline:
-        </p>
-
         <div className="overview__ai-steps">
           <div className="overview__ai-step">
-            <div className="overview__ai-step-num">01</div>
-            <div className="overview__ai-step-title">Passive Telemetry Probe</div>
+            <div className="overview__ai-step-num">01 · Live</div>
+            <div className="overview__ai-step-title">Measure</div>
             <p className="overview__ai-step-desc">
-              Measures transport RTT latency, packet jitter variance, and packet loss rate using micro ICMP/UDP probes.
+              Cloudflare's open-source speed test measures download, upload, latency, jitter and latency under load
+              from your browser.
             </p>
           </div>
 
           <div className="overview__ai-step">
-            <div className="overview__ai-step-num">02</div>
-            <div className="overview__ai-step-title">Regression: Throughput (Mbps)</div>
+            <div className="overview__ai-step-num">02 · Live</div>
+            <div className="overview__ai-step-title">Grade</div>
             <p className="overview__ai-step-desc">
-              Ensemble regressor predicts continuous download bandwidth with R² &gt; 0.94 without flooding links.
+              Results are graded against standard targets and Cloudflare's AIM ratings for streaming, gaming and calls.
             </p>
           </div>
 
           <div className="overview__ai-step">
-            <div className="overview__ai-step-num">03</div>
-            <div className="overview__ai-step-title">Classification: Quality Tier</div>
+            <div className="overview__ai-step-num">03 · {isModelConfigured ? 'Live' : 'In development'}</div>
+            <div className="overview__ai-step-title">Predict</div>
             <p className="overview__ai-step-desc">
-              Multi-class tree classifies connection into ITU-T operational SLA tiers (Excellent / Good / Fair / Poor).
+              A model will estimate speed from passive signals without a full test. Until then the Estimator uses a
+              built-in formula.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── Scenario Quick Selector ── */}
+      {/* ── Presets ── */}
       <section className="card overview__scenarios-card">
         <div className="overview__scenarios-header">
           <div>
-            <span className="eyebrow">Preset Profiles</span>
-            <h3 className="overview__scenarios-title">Simulate Real-World Network Link Profiles</h3>
+            <span className="eyebrow">Preset profiles</span>
+            <h3 className="overview__scenarios-title">Try the estimator on typical connections</h3>
           </div>
-          <span className="overview__scenarios-hint">Click any profile to load into Network Analyzer</span>
+          <span className="overview__scenarios-hint">Opens the Estimator with these values filled in</span>
         </div>
 
         <div className="overview__scenarios-chips">
-          <button
-            type="button"
-            className="tag-pill overview__scenario-chip"
-            onClick={() => onNavigate('analyzer')}
-          >
-            <span className="overview__scenario-dot" style={{ background: 'var(--color-electric)' }} />
-            <span>Fiber Gigabit · 10ms · 0.5ms Jitter</span>
-          </button>
-
-          <button
-            type="button"
-            className="tag-pill overview__scenario-chip"
-            onClick={() => onNavigate('analyzer')}
-          >
-            <span className="overview__scenario-dot" style={{ background: 'var(--accent-cyan)' }} />
-            <span>High-Speed Broadband · 22ms · 2.1ms Jitter</span>
-          </button>
-
-          <button
-            type="button"
-            className="tag-pill overview__scenario-chip"
-            onClick={() => onNavigate('analyzer')}
-          >
-            <span className="overview__scenario-dot" style={{ background: 'var(--accent-purple)' }} />
-            <span>Starlink LEO Satellite · 42ms · 8.4ms Jitter</span>
-          </button>
-
-          <button
-            type="button"
-            className="tag-pill overview__scenario-chip"
-            onClick={() => onNavigate('analyzer')}
-          >
-            <span className="overview__scenario-dot" style={{ background: 'var(--accent-amber)' }} />
-            <span>Degraded 4G / LTE · 85ms · 18ms Jitter · 3.2% Loss</span>
-          </button>
-
-          <button
-            type="button"
-            className="tag-pill overview__scenario-chip"
-            onClick={() => onNavigate('analyzer')}
-          >
-            <span className="overview__scenario-dot" style={{ background: 'var(--accent-red)' }} />
-            <span>High-Loss Wireless · 140ms · 45ms Jitter · 9.5% Loss</span>
-          </button>
+          {PRESET_SCENARIOS.map((sc) => (
+            <button
+              key={sc.id}
+              type="button"
+              className="tag-pill overview__scenario-chip"
+              onClick={() => onSelectScenario(sc.id)}
+              title={sc.description}
+            >
+              <span className="overview__scenario-dot" style={{ background: SCENARIO_COLOR[sc.category] }} />
+              <span>
+                {sc.name} · {sc.values.latency} ms · {sc.values.jitter} ms jitter
+                {sc.values.packetLoss > 0 ? ` · ${sc.values.packetLoss}% loss` : ''}
+              </span>
+            </button>
+          ))}
         </div>
       </section>
     </div>

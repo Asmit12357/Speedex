@@ -1,27 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Clock, Sun, Moon, Server, ShieldCheck } from 'lucide-react';
+import { Wifi, WifiOff, Clock, Sun, Moon, Server } from 'lucide-react';
 import type { Theme } from '../../hooks/useTheme';
+import type { SpeedTestState } from '../../hooks/useSpeedTest';
+import type { EdgeLocation, PageId } from '../../types';
+import { NAV_ITEMS } from '../../navigation';
+import { formatEdge } from '../../services/edgeInfo';
 import './Header.css';
 
 interface HeaderProps {
   theme: Theme;
   onToggleTheme: () => void;
+  activePage: PageId;
+  edge?: EdgeLocation;
+  testState: SpeedTestState;
+  onOpenSpeedTest: () => void;
 }
 
-function Header({ theme, onToggleTheme }: HeaderProps) {
+const PHASE_TEXT = { latency: 'latency', download: 'download', upload: 'upload', packetLoss: 'packet loss' } as const;
+
+function Header({ theme, onToggleTheme, activePage, edge, testState, onOpenSpeedTest }: HeaderProps) {
   const [isOnline, setIsOnline] = useState<boolean>(() => {
     return typeof navigator !== 'undefined' ? navigator.onLine : true;
   });
 
   const [currentTime, setCurrentTime] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  });
-
-  const [connectionType] = useState<string>(() => {
-    if (typeof navigator === 'undefined') return 'Gigabit';
-    const navConn = (navigator as unknown as { connection?: { effectiveType?: string } }).connection;
-    return navConn?.effectiveType ? navConn.effectiveType.toUpperCase() : 'Gigabit';
   });
 
   useEffect(() => {
@@ -44,6 +47,13 @@ function Header({ theme, onToggleTheme }: HeaderProps) {
     };
   }, []);
 
+  const pageLabel = NAV_ITEMS.find((item) => item.id === activePage)?.label ?? '';
+  // Reaching Cloudflare proves we're online even when navigator.onLine is unreliable (e.g. embedded browsers)
+  const online = isOnline || edge !== undefined;
+  const running = testState.status === 'running';
+  const testPct = running ? Math.round((testState.progress?.fraction ?? 0) * 100) : 0;
+  const phase = running && testState.progress ? PHASE_TEXT[testState.progress.phase] : 'connecting';
+
   return (
     <header className="header">
       <div className="header__left">
@@ -55,22 +65,22 @@ function Header({ theme, onToggleTheme }: HeaderProps) {
           </span>
           <span className="header__breadcrumb-root">Speedex</span>
           <span className="header__breadcrumb-slash">/</span>
-          <span className="header__breadcrumb-current">Network Intelligence &amp; SLA Diagnostics</span>
+          <span className="header__breadcrumb-current">{pageLabel}</span>
         </div>
-        <div className="header__env-badge" title="Validated Passive Telemetry Model">
-          <ShieldCheck size={11} className="header__env-icon" />
-          <span>Non-Saturating Telemetry v2.4</span>
-        </div>
+        {running && activePage !== 'speedtest' && (
+          <button type="button" className="header__env-badge header__test-chip" onClick={onOpenSpeedTest}>
+            <span className="pulse-dot pulse-dot--online" />
+            <span>Testing {phase} · {testPct}%</span>
+          </button>
+        )}
       </div>
 
       <div className="header__right">
-        {/* Link Connectivity Chip */}
-        <div className="header__status-chip" title="Active network connection status">
-          {isOnline ? (
+        <div className="header__status-chip" title="Browser network status">
+          {online ? (
             <>
-              <span className="pulse-dot pulse-dot--online" />
               <Wifi size={13} className="header__icon-green" />
-              <span className="header__status-text">Online • {connectionType}</span>
+              <span className="header__status-text">Online</span>
             </>
           ) : (
             <>
@@ -80,25 +90,24 @@ function Header({ theme, onToggleTheme }: HeaderProps) {
           )}
         </div>
 
-        {/* Edge Node Chip */}
-        <div className="header__node-chip" title="Connected Telemetry Edge PoP">
-          <Server size={12} className="header__node-icon" />
-          <span>FRA-01 (18ms)</span>
-        </div>
+        {edge && (
+          <div className="header__node-chip" title="Nearest Cloudflare data center">
+            <Server size={12} className="header__node-icon" />
+            <span>{formatEdge(edge)}</span>
+          </div>
+        )}
 
-        {/* Time Chip */}
-        <div className="header__time-chip" title="Local workstation timestamp">
+        <div className="header__time-chip" title="Local time">
           <Clock size={12} />
-          <span className="header__time-text">{currentTime || 'Syncing...'}</span>
+          <span className="header__time-text">{currentTime}</span>
         </div>
 
-        {/* Theme Toggle Button */}
         <button
           type="button"
           className="header__theme-btn"
           onClick={onToggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-          aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
           {theme === 'dark' ? (
             <Sun size={14} className="header__theme-icon header__theme-icon--sun" />

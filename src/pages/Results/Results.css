@@ -516,3 +516,33 @@
 .results__icon-blue { color: var(--accent-cyan-light); }
 .results__icon-indigo { color: var(--accent-purple); }
 .results__icon-red { color: var(--accent-red); }
+
+/* ── Gauge theming & motion ── */
+.results__speedometer {
+  --gauge-end: var(--color-electric);
+}
+
+[data-theme="light"] .results__speedometer {
+  --gauge-end: var(--accent-green);
+}
+
+.results__meter-fill {
+  transition: stroke-dashoffset var(--duration-slow) var(--cubic-default);
+}
+
+.results__needle {
+  transition: transform var(--duration-slow) var(--cubic-default);
+}
+
+.results__telemetry-na {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.results__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}

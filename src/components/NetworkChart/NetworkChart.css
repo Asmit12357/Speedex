@@ -205,3 +205,8 @@
     gap: var(--sp-2);
   }
 }
+
+/* Sample data is muted so it never reads as a real measurement */
+.network-chart__body--sample {
+  opacity: 0.55;
+}

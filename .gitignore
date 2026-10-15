@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local env (may hold API URLs or keys)
+.env
+.env.*
+!.env.example

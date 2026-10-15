@@ -1,32 +1,87 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
-  AreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
 } from 'recharts';
-import { demoTimeSeries24h, demoTimeSeries12h } from '../../data/demoData';
-import { Download, Upload, Clock, Activity } from 'lucide-react';
+import { Download, Clock, Activity, Layers, Zap } from 'lucide-react';
+import type { AnalysisEntry } from '../../types';
+import { demoTimeSeries24h } from '../../data/demoData';
 import './NetworkChart.css';
 
-type TimeRange = '24h' | '12h';
+type Range = 10 | 25 | 'all';
 
-const NetworkChart: React.FC = () => {
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+interface ChartPoint {
+  time: string;
+  downloadSpeed: number;
+  uploadSpeed: number;
+  latency: number;
+}
+
+interface NetworkChartProps {
+  history: AnalysisEntry[];
+  onRunTest: () => void;
+}
+
+const RANGES: { id: Range; label: string }[] = [
+  { id: 10, label: 'Last 10' },
+  { id: 25, label: 'Last 25' },
+  { id: 'all', label: 'All' },
+];
+
+const COLORS = {
+  download: 'var(--accent-cyan)',
+  upload: 'var(--color-electric)',
+  latency: 'var(--accent-purple)',
+};
+
+const SAMPLE: ChartPoint[] = demoTimeSeries24h.map(({ time, downloadSpeed, uploadSpeed, latency }) => ({
+  time,
+  downloadSpeed,
+  uploadSpeed,
+  latency,
+}));
+
+function pointLabel(iso: string): string {
+  const d = new Date(iso);
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay
+    ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+const NetworkChart = ({ history, onRunTest }: NetworkChartProps) => {
+  const [range, setRange] = useState<Range>(10);
   const [showDownload, setShowDownload] = useState(true);
   const [showUpload, setShowUpload] = useState(true);
   const [showLatency, setShowLatency] = useState(true);
 
-  const data = timeRange === '24h' ? demoTimeSeries24h : demoTimeSeries12h;
+  // Oldest → newest, measured tests only
+  const measured = useMemo<ChartPoint[]>(
+    () =>
+      history
+        .filter((e) => e.measurement)
+        .reverse()
+        .map((e) => ({
+          time: pointLabel(e.timestamp),
+          downloadSpeed: e.measurement!.downloadMbps,
+          uploadSpeed: e.measurement!.uploadMbps,
+          latency: e.measurement!.latencyMs,
+        })),
+    [history],
+  );
 
-  // Compute peak stats for header summary
+  const isSample = measured.length < 2;
+  const data = isSample ? SAMPLE : range === 'all' ? measured : measured.slice(-range);
+
   const peakDownload = Math.max(...data.map((d) => d.downloadSpeed));
-  const minLatency = Math.min(...data.map((d) => d.latency));
-  const avgLoss = (data.reduce((acc, d) => acc + d.packetLoss, 0) / data.length).toFixed(1);
+  const bestLatency = Math.min(...data.map((d) => d.latency));
 
   return (
     <div className="card network-chart">
@@ -34,58 +89,63 @@ const NetworkChart: React.FC = () => {
         <div className="network-chart__title-group">
           <div className="network-chart__title">
             <Activity size={15} className="network-chart__title-icon" />
-            <span>Telemetry Performance Trends</span>
+            <span>Speed over time</span>
           </div>
           <div className="network-chart__subtitle">
-            Temporal bandwidth and transport delay metrics over observation window
+            {isSample
+              ? 'Illustrative data. Your own trend appears after two speed tests.'
+              : `Your last ${data.length} measured tests, oldest to newest`}
           </div>
         </div>
 
         <div className="network-chart__controls">
-          {/* Time range pill buttons */}
-          <div className="network-chart__range-selector">
-            <button
-              type="button"
-              className={`network-chart__range-btn${timeRange === '24h' ? ' network-chart__range-btn--active' : ''}`}
-              onClick={() => setTimeRange('24h')}
-            >
-              24 Hours
-            </button>
-            <button
-              type="button"
-              className={`network-chart__range-btn${timeRange === '12h' ? ' network-chart__range-btn--active' : ''}`}
-              onClick={() => setTimeRange('12h')}
-            >
-              12 Hours
-            </button>
-          </div>
-
-          <span className="demo-badge">Historical Stream</span>
+          {isSample ? (
+            <>
+              <span className="demo-badge">Sample data</span>
+              <button type="button" className="btn btn--secondary btn--sm" onClick={onRunTest}>
+                <Zap size={13} />
+                <span>Run a test</span>
+              </button>
+            </>
+          ) : (
+            <div className="network-chart__range-selector" role="group" aria-label="How many tests">
+              {RANGES.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  aria-pressed={range === r.id}
+                  className={`network-chart__range-btn${range === r.id ? ' network-chart__range-btn--active' : ''}`}
+                  onClick={() => setRange(r.id)}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Quick Stats Pill Strip */}
       <div className="network-chart__stats-strip">
         <div className="network-chart__stat-item">
           <Download size={13} className="network-chart__stat-icon network-chart__stat-icon--cyan" />
-          <span className="network-chart__stat-label">Peak Download:</span>
+          <span className="network-chart__stat-label">Peak download:</span>
           <span className="network-chart__stat-value">{peakDownload} Mbps</span>
         </div>
         <div className="network-chart__stat-item">
           <Clock size={13} className="network-chart__stat-icon network-chart__stat-icon--indigo" />
-          <span className="network-chart__stat-label">Min RTT Latency:</span>
-          <span className="network-chart__stat-value">{minLatency} ms</span>
+          <span className="network-chart__stat-label">Best latency:</span>
+          <span className="network-chart__stat-value">{bestLatency} ms</span>
         </div>
         <div className="network-chart__stat-item">
-          <Upload size={13} className="network-chart__stat-icon network-chart__stat-icon--emerald" />
-          <span className="network-chart__stat-label">Avg Loss:</span>
-          <span className="network-chart__stat-value">{avgLoss}%</span>
+          <Layers size={13} className="network-chart__stat-icon network-chart__stat-icon--emerald" />
+          <span className="network-chart__stat-label">Tests:</span>
+          <span className="network-chart__stat-value">{isSample ? '—' : measured.length}</span>
         </div>
 
-        {/* Series toggle pills */}
-        <div className="network-chart__toggles">
+        <div className="network-chart__toggles" role="group" aria-label="Series">
           <button
             type="button"
+            aria-pressed={showDownload}
             className={`network-chart__toggle-pill${showDownload ? ' network-chart__toggle-pill--active-cyan' : ''}`}
             onClick={() => setShowDownload((p) => !p)}
           >
@@ -93,6 +153,7 @@ const NetworkChart: React.FC = () => {
           </button>
           <button
             type="button"
+            aria-pressed={showUpload}
             className={`network-chart__toggle-pill${showUpload ? ' network-chart__toggle-pill--active-emerald' : ''}`}
             onClick={() => setShowUpload((p) => !p)}
           >
@@ -100,6 +161,7 @@ const NetworkChart: React.FC = () => {
           </button>
           <button
             type="button"
+            aria-pressed={showLatency}
             className={`network-chart__toggle-pill${showLatency ? ' network-chart__toggle-pill--active-indigo' : ''}`}
             onClick={() => setShowLatency((p) => !p)}
           >
@@ -108,21 +170,17 @@ const NetworkChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="network-chart__body">
+      <div className={`network-chart__body${isSample ? ' network-chart__body--sample' : ''}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 12, right: 18, left: -10, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 12, right: 4, left: -10, bottom: 0 }}>
             <defs>
-              <linearGradient id="cyanGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#00e5ff" stopOpacity={0.0} />
+              <linearGradient id="nc-download" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COLORS.download} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={COLORS.download} stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="emeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#c7ff00" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#c7ff00" stopOpacity={0.0} />
-              </linearGradient>
-              <linearGradient id="indigoGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#9d65ff" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#9d65ff" stopOpacity={0.0} />
+              <linearGradient id="nc-upload" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COLORS.upload} stopOpacity={0.12} />
+                <stop offset="100%" stopColor={COLORS.upload} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="2 4" stroke="var(--border-color)" vertical={false} />
@@ -131,11 +189,25 @@ const NetworkChart: React.FC = () => {
               tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
               stroke="var(--border-color)"
               tickLine={false}
+              minTickGap={16}
             />
             <YAxis
+              yAxisId="mbps"
               tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
               stroke="var(--border-color)"
               tickLine={false}
+              unit=" Mb"
+              width={64}
+            />
+            <YAxis
+              yAxisId="ms"
+              orientation="right"
+              hide={!showLatency}
+              tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+              stroke="var(--border-color)"
+              tickLine={false}
+              unit=" ms"
+              width={56}
             />
             <Tooltip
               contentStyle={{
@@ -154,10 +226,7 @@ const NetworkChart: React.FC = () => {
                 letterSpacing: '0.04em',
               }}
               itemStyle={{ fontSize: 12, padding: '2px 0' }}
-              formatter={(value: any, name: any) => {
-                const unit = name === 'RTT Latency' ? ' ms' : ' Mbps';
-                return [`${value ?? 0}${unit}`, String(name ?? '')];
-              }}
+              formatter={(value, name) => [`${value ?? 0}${name === 'Latency' ? ' ms' : ' Mbps'}`, String(name ?? '')]}
             />
             <Legend
               verticalAlign="bottom"
@@ -167,41 +236,42 @@ const NetworkChart: React.FC = () => {
             />
             {showDownload && (
               <Area
+                yAxisId="mbps"
                 type="monotone"
                 dataKey="downloadSpeed"
-                name="Download Speed"
-                stroke="#00e5ff"
+                name="Download"
+                stroke={COLORS.download}
                 strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#cyanGradient)"
-                activeDot={{ r: 5, stroke: '#ffffff', strokeWidth: 2 }}
+                fill="url(#nc-download)"
+                activeDot={{ r: 4 }}
               />
             )}
             {showUpload && (
               <Area
+                yAxisId="mbps"
                 type="monotone"
                 dataKey="uploadSpeed"
-                name="Upload Speed"
-                stroke="#c7ff00"
+                name="Upload"
+                stroke={COLORS.upload}
                 strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#emeraldGradient)"
+                fill="url(#nc-upload)"
                 activeDot={{ r: 4 }}
               />
             )}
             {showLatency && (
-              <Area
+              <Line
+                yAxisId="ms"
                 type="monotone"
                 dataKey="latency"
-                name="RTT Latency"
-                stroke="#9d65ff"
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#indigoGradient)"
-                activeDot={{ r: 4 }}
+                name="Latency"
+                stroke={COLORS.latency}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                dot={false}
+                activeDot={{ r: 3 }}
               />
             )}
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyQuality, computeMockSpeed, normaliseSignal } from './mockPredictionService';
+import { classifyQuality, estimateDownloadMbps, normaliseSignal } from './heuristicModel';
 import type { NetworkInput } from '../types';
 
 const fiber: NetworkInput = {
@@ -25,13 +25,13 @@ describe('normaliseSignal', () => {
 
 describe('heuristic estimate', () => {
   it('rates a clean fiber link as Excellent', () => {
-    const speed = computeMockSpeed(fiber);
+    const speed = estimateDownloadMbps(fiber);
     expect(speed).toBeGreaterThan(50);
     expect(classifyQuality(speed, fiber)).toBe('Excellent');
   });
 
   it('never returns a speed below the floor', () => {
     const awful: NetworkInput = { ...fiber, latency: 900, jitter: 200, packetLoss: 40, signalStrength: -99 };
-    expect(computeMockSpeed(awful)).toBe(0.8);
+    expect(estimateDownloadMbps(awful)).toBe(0.8);
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import {
   Clock,
@@ -11,12 +11,17 @@ import {
   BookmarkCheck,
 } from 'lucide-react';
 import type { NetworkInput, SignalUnit } from '../../types';
-import { DEMO_VALUES, PRESET_SCENARIOS } from '../../services/mockPredictionService';
+import { DEMO_VALUES, PRESET_SCENARIOS } from '../../data/scenarios';
+import { probeLatency } from '../../services/speedTestService';
+import { isModelConfigured } from '../../services/predictionService';
 import './Analyzer.css';
 
 interface AnalyzerProps {
-  onAnalyse: (input: NetworkInput) => void;
+  onAnalyse: (input: NetworkInput, scenarioName?: string) => void;
   isAnalysing: boolean;
+  /** Preset picked elsewhere (e.g. Overview) to load on arrival */
+  initialScenarioId?: string | null;
+  onScenarioApplied?: () => void;
 }
 
 interface FormValues {
@@ -36,6 +41,21 @@ const INITIAL_VALUES: FormValues = {
   signalStrength: '',
   signalUnit: 'dBm',
 };
+
+function valuesFromInput(input: NetworkInput): FormValues {
+  return {
+    latency: String(input.latency),
+    jitter: String(input.jitter),
+    packetLoss: String(input.packetLoss),
+    signalStrength: String(input.signalStrength),
+    signalUnit: input.signalUnit,
+  };
+}
+
+function initialFor(scenarioId: string | null | undefined): FormValues {
+  const scenario = PRESET_SCENARIOS.find((s) => s.id === scenarioId);
+  return scenario ? valuesFromInput(scenario.values) : INITIAL_VALUES;
+}
 
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {};
@@ -77,11 +97,19 @@ function validate(values: FormValues): FormErrors {
   return errors;
 }
 
-export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
-  const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
+export default function Analyzer({ onAnalyse, isAnalysing, initialScenarioId, onScenarioApplied }: AnalyzerProps) {
+  const [values, setValues] = useState<FormValues>(() => initialFor(initialScenarioId));
   const [errors, setErrors] = useState<FormErrors>({});
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
+    () => PRESET_SCENARIOS.find((s) => s.id === initialScenarioId)?.id ?? null,
+  );
   const [isDetecting, setIsDetecting] = useState<boolean>(false);
+  const [probeNote, setProbeNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // The preset has been loaded into the form; clear it so a later visit starts clean
+  useEffect(() => {
+    if (initialScenarioId) onScenarioApplied?.();
+  }, [initialScenarioId, onScenarioApplied]);
 
   const updateField = useCallback(
     (field: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -112,59 +140,49 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
     const target = PRESET_SCENARIOS.find((s) => s.id === scenarioId);
     if (!target) return;
     setSelectedScenarioId(scenarioId);
-    setValues({
-      latency: String(target.values.latency),
-      jitter: String(target.values.jitter),
-      packetLoss: String(target.values.packetLoss),
-      signalStrength: String(target.values.signalStrength),
-      signalUnit: target.values.signalUnit,
-    });
+    setValues(valuesFromInput(target.values));
     setErrors({});
+    setProbeNote(null);
   }, []);
 
   const handleDemoValues = useCallback(() => {
     setSelectedScenarioId(null);
-    setValues({
-      latency: String(DEMO_VALUES.latency),
-      jitter: String(DEMO_VALUES.jitter),
-      packetLoss: String(DEMO_VALUES.packetLoss),
-      signalStrength: String(DEMO_VALUES.signalStrength),
-      signalUnit: DEMO_VALUES.signalUnit,
-    });
+    setValues(valuesFromInput(DEMO_VALUES));
     setErrors({});
+    setProbeNote(null);
   }, []);
 
   const handleReset = useCallback(() => {
     setSelectedScenarioId(null);
     setValues(INITIAL_VALUES);
     setErrors({});
+    setProbeNote(null);
   }, []);
 
+  // Real latency + jitter from ~20 tiny Cloudflare requests. Loss and signal stay as entered.
   const handleAutoDetect = useCallback(async () => {
     setIsDetecting(true);
+    setProbeNote(null);
     try {
-      const startTime = performance.now();
-      await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
-      const duration = Math.round(performance.now() - startTime);
-
-      const detectedLatency = Math.max(6, Math.min(60, duration));
-      const detectedJitter = Math.round(Math.max(0.5, detectedLatency * 0.12) * 10) / 10;
-
-      setValues({
-        latency: String(detectedLatency),
-        jitter: String(detectedJitter),
-        packetLoss: '0.0',
-        signalStrength: '-48',
-        signalUnit: 'dBm',
-      });
+      const { latencyMs, jitterMs, edge } = await probeLatency();
+      setValues((prev) => ({ ...prev, latency: String(latencyMs), jitter: String(jitterMs) }));
       setSelectedScenarioId(null);
-      setErrors({});
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.latency;
+        delete next.jitter;
+        return next;
+      });
+      setProbeNote({
+        ok: true,
+        text: `Measured against Cloudflare${edge ? ` ${edge.colo}` : ''}. Browsers can't read packet loss or signal strength, so enter those yourself.`,
+      });
     } catch {
-      handleDemoValues();
+      setProbeNote({ ok: false, text: 'Could not reach Cloudflare to measure latency. Enter the values manually.' });
     } finally {
       setIsDetecting(false);
     }
-  }, [handleDemoValues]);
+  }, []);
 
   const handleSubmit = useCallback(
     (e: FormEvent) => {
@@ -174,15 +192,18 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
         setErrors(validationErrors);
         return;
       }
-      onAnalyse({
-        latency: Number(values.latency),
-        jitter: Number(values.jitter),
-        packetLoss: Number(values.packetLoss),
-        signalStrength: Number(values.signalStrength),
-        signalUnit: values.signalUnit,
-      });
+      onAnalyse(
+        {
+          latency: Number(values.latency),
+          jitter: Number(values.jitter),
+          packetLoss: Number(values.packetLoss),
+          signalStrength: Number(values.signalStrength),
+          signalUnit: values.signalUnit,
+        },
+        PRESET_SCENARIOS.find((s) => s.id === selectedScenarioId)?.name,
+      );
     },
-    [values, onAnalyse]
+    [values, onAnalyse, selectedScenarioId]
   );
 
   const getLatencyTier = (val: string) => {
@@ -218,10 +239,14 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
       {/* ── Console Header ── */}
       <div className="analyzer__header">
         <div>
-          <span className="eyebrow">Diagnostic Workspace</span>
-          <h1 className="page-title">Network Telemetry Analyzer</h1>
+          <span className="eyebrow">{isModelConfigured ? 'Model prediction' : 'Estimate · model in development'}</span>
+          <h1 className="page-title">Speed estimator</h1>
           <p className="page-subtitle">
-            Configure transport-layer telemetry parameters or apply a calibrated link profile to run dual-task ML bandwidth inference and ITU-T SLA evaluation.
+            Estimate download speed and quality from latency, jitter, packet loss and signal strength, without running a
+            full test.{' '}
+            {isModelConfigured
+              ? 'Predictions come from your model API.'
+              : 'Until the model ships this uses a built-in formula, so treat results as rough. For real numbers, run a speed test.'}
           </p>
         </div>
       </div>
@@ -234,9 +259,9 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
             <div className="analyzer__scenarios-header">
               <div className="analyzer__scenarios-title">
                 <BookmarkCheck size={14} className="analyzer__scenario-icon" />
-                <span>Calibrated Link Profiles</span>
+                <span>Preset profiles</span>
               </div>
-              <span className="analyzer__scenarios-hint">Load realistic transport characteristics</span>
+              <span className="analyzer__scenarios-hint">Typical values for common connection types</span>
             </div>
 
             <div className="analyzer__scenarios-list">
@@ -260,16 +285,16 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
               <div className="analyzer__loading-overlay">
                 <div className="analyzer__loading-content">
                   <span className="spinner" />
-                  <h3>Running Dual-Task Regressor…</h3>
-                  <p>Inference pipeline calculating throughput bandwidth curve and SLA tier classification.</p>
+                  <h3>{isModelConfigured ? 'Asking the model…' : 'Estimating…'}</h3>
+                  <p>Working out download speed and quality tier from these values.</p>
                 </div>
               </div>
             )}
 
             <div className="analyzer__form-header">
               <div>
-                <span className="eyebrow">Input Telemetry</span>
-                <h2 className="analyzer__section-title">Transport Layer Parameters</h2>
+                <span className="eyebrow">Inputs</span>
+                <h2 className="analyzer__section-title">Connection signals</h2>
               </div>
               <button
                 type="button"
@@ -280,16 +305,22 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 {isDetecting ? (
                   <>
                     <span className="spinner" />
-                    <span>Measuring delay…</span>
+                    <span>Measuring latency…</span>
                   </>
                 ) : (
                   <>
                     <Zap size={13} />
-                    <span>Auto-Probe Link</span>
+                    <span>Measure latency</span>
                   </>
                 )}
               </button>
             </div>
+
+            {probeNote && (
+              <div className={`alert-banner ${probeNote.ok ? 'alert-banner--info' : 'alert-banner--error'} analyzer__probe-note`} role="status">
+                <span>{probeNote.text}</span>
+              </div>
+            )}
 
             <div className="analyzer__input-grid">
               {/* Latency Input */}
@@ -435,7 +466,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 ) : (
                   <span className="input-hint">
                     {values.signalUnit === 'dBm'
-                      ? 'Link budget: -30 dBm (strong) to -85 dBm (fringe).'
+                      ? 'Find it in your router or phone Wi-Fi details. -30 (strong) to -85 dBm (weak).'
                       : 'Wireless signal percentage.'}
                   </span>
                 )}
@@ -452,7 +483,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 onClick={handleDemoValues}
                 disabled={isAnalysing}
               >
-                <span>Load Default Values</span>
+                <span>Load example values</span>
               </button>
 
               <button
@@ -473,12 +504,12 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 {isAnalysing ? (
                   <>
                     <span className="spinner" />
-                    <span>Executing Model…</span>
+                    <span>{isModelConfigured ? 'Predicting…' : 'Estimating…'}</span>
                   </>
                 ) : (
                   <>
                     <Zap size={14} />
-                    <span>Run Dual-Task Prediction</span>
+                    <span>{isModelConfigured ? 'Predict speed' : 'Estimate speed'}</span>
                   </>
                 )}
               </button>
@@ -490,9 +521,9 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
         <aside className="analyzer__sidebar">
           <div className="card analyzer__info-panel">
             <div className="analyzer__side-header">
-              <span className="eyebrow">Observability Standards</span>
+              <span className="eyebrow">Reference</span>
               <h3 className="card__title">
-                <span>ITU-T Telemetry Reference</span>
+                <span>What good looks like</span>
               </h3>
             </div>
 
@@ -557,7 +588,9 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
             <div className="analyzer__side-notice">
               <ShieldCheck size={14} className="analyzer__icon-green" />
               <span>
-                Passive telemetry model trained on 120k transport-layer packet sessions.
+                {isModelConfigured
+                  ? 'Predictions come from the model API configured for this deployment.'
+                  : 'The prediction model is still in development. Estimates here use a built-in formula.'}
               </span>
             </div>
           </div>

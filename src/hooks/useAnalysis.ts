@@ -1,21 +1,45 @@
 import { useState, useCallback } from 'react';
-import type { AnalysisEntry, NetworkInput, PredictionResult } from '../types';
-import { predictionService } from '../services/mockPredictionService';
+import type { AnalysisEntry, NetworkInput, SpeedTestMeasurement } from '../types';
+import { predictionService } from '../services/predictionService';
+import { resultFromMeasurement } from '../services/measuredResult';
 
 const STORAGE_KEY = 'speedex-history';
+const MAX_ENTRIES = 50;
 
-function loadHistory(): AnalysisEntry[] {
+/**
+ * Upgrades entries saved by older versions: `isSimulated` became `source`,
+ * and their random confidence scores are dropped.
+ */
+export function migrateEntry(raw: unknown): AnalysisEntry | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const entry = raw as AnalysisEntry & { result?: Record<string, unknown> };
+  if (typeof entry.id !== 'string' || !entry.result || typeof entry.result !== 'object') return null;
+  if (!entry.input && !entry.measurement) return null;
+  if (entry.result.source) return entry;
+
+  const { isSimulated: _legacy, confidenceScore: _fake, ...result } = entry.result;
+  return {
+    ...entry,
+    result: { ...(result as unknown as AnalysisEntry['result']), source: 'estimate' },
+  };
+}
+
+export function loadHistory(): AnalysisEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as AnalysisEntry[];
-  } catch { /* ignore corrupt data */ }
-  return [];
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(migrateEntry).filter((e): e is AnalysisEntry => e !== null);
+  } catch {
+    return []; // corrupt data or storage blocked
+  }
 }
 
 function saveHistory(entries: AnalysisEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch { /* storage full — silent fail */ }
+  } catch { /* storage full or blocked — history just won't persist */ }
 }
 
 function generateId(): string {
@@ -24,58 +48,61 @@ function generateId(): string {
 
 export function useAnalysis() {
   const [history, setHistory] = useState<AnalysisEntry[]>(loadHistory);
-  const [currentResult, setCurrentResult] = useState<PredictionResult | null>(null);
-  const [currentInput, setCurrentInput] = useState<NetworkInput | null>(null);
+  const [current, setCurrent] = useState<AnalysisEntry | null>(null);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const analyse = useCallback(async (input: NetworkInput) => {
+  const record = useCallback((entry: AnalysisEntry) => {
+    setCurrent(entry);
+    setHistory((prev) => {
+      const updated = [entry, ...prev].slice(0, MAX_ENTRIES);
+      saveHistory(updated);
+      return updated;
+    });
+  }, []);
+
+  const analyse = useCallback(async (input: NetworkInput, scenarioName?: string) => {
     setIsAnalysing(true);
     setError(null);
-    setCurrentInput(input);
-
     try {
       const result = await predictionService.predict(input);
-      setCurrentResult(result);
-
-      const entry: AnalysisEntry = {
-        id: generateId(),
-        timestamp: new Date().toISOString(),
-        input,
-        result,
-      };
-
-      setHistory(prev => {
-        const updated = [entry, ...prev].slice(0, 50); // keep last 50
-        saveHistory(updated);
-        return updated;
-      });
+      record({ id: generateId(), timestamp: new Date().toISOString(), input, result, scenarioName });
+      return true;
     } catch {
       setError('Analysis failed. Please try again.');
-      setCurrentResult(null);
+      return false;
     } finally {
       setIsAnalysing(false);
     }
-  }, []);
+  }, [record]);
+
+  const recordMeasurement = useCallback((measurement: SpeedTestMeasurement) => {
+    record({
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      measurement,
+      result: resultFromMeasurement(measurement),
+    });
+  }, [record]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch { /* storage blocked */ }
   }, []);
 
-  const loadEntry = useCallback((entry: AnalysisEntry) => {
-    setCurrentInput(entry.input);
-    setCurrentResult(entry.result);
-  }, []);
+  const dismissError = useCallback(() => setError(null), []);
 
   return {
     history,
-    currentResult,
-    currentInput,
+    current,
     isAnalysing,
     error,
     analyse,
+    recordMeasurement,
     clearHistory,
-    loadEntry,
+    loadEntry: setCurrent,
+    dismissError,
   };
 }

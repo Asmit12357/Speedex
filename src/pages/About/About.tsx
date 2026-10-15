@@ -39,17 +39,16 @@ class TelemetryPayload(BaseModel):
     signalStrength: float
     signalUnit: str
 
-@app.post("/api/predict")
+@app.post("/predict")
 async def predict_network_quality(data: TelemetryPayload):
     features = [[data.latency, data.jitter, data.packetLoss, data.signalStrength]]
     predicted_speed = float(regressor.predict(features)[0])
     predicted_quality = str(classifier.predict(features)[0])
     
+    # Only downloadSpeed and quality are required; see README for optional fields
     return {
         "downloadSpeed": round(predicted_speed, 1),
         "quality": predicted_quality,
-        "isSimulated": False,
-        "confidenceScore": 96.4
     }`;
 
   const handleCopyCode = () => {
@@ -63,12 +62,12 @@ async def predict_network_quality(data: TelemetryPayload):
       {/* ── Page Header Hero ── */}
       <div className="about__hero card">
         <div className="about__hero-meta">
-          <span className="eyebrow">Academic &amp; Systems Architecture</span>
+          <span className="eyebrow">Model design · in development</span>
           <h1 className="about__hero-title">Dual-Task Network Quality &amp; Bandwidth Framework</h1>
           <p className="about__hero-desc">
-            A predictive machine learning architecture designed to evaluate physical and transport-layer
-            telemetry and infer continuous throughput and discrete SLA operational health without
-            saturating end-user bandwidth.
+            The planned machine learning model: it estimates throughput and quality tier from lightweight
+            signals, so you get a useful answer without running a full speed test. Live measurements already
+            work today; this page describes what's being built next.
           </p>
         </div>
 
@@ -119,9 +118,8 @@ async def predict_network_quality(data: TelemetryPayload):
               <span>Dual-Task System Objective</span>
             </h2>
             <p className="about__section-desc">
-              Conventional speed tests saturate user links with heavy multi-megabyte payloads, causing
-              congestion and consuming metered data. Speedex operates via passive and lightweight active telemetry,
-              passing 4 transport/link features to a dual-task predictive model:
+              A full speed test (like the one on the Speed Test page) moves tens to hundreds of megabytes. The model
+              aims to predict the same outcome from four lightweight signals, using two tasks:
             </p>
 
             <div className="about__task-grid">
@@ -513,9 +511,9 @@ async def predict_network_quality(data: TelemetryPayload):
               <div className="about__status-notice">
                 <Info size={16} className="about__icon-amber" />
                 <span>
-                  The web application features an isolated, modular architecture.
-                  The UI interfaces exclusively with the <code>PredictionService</code> interface, ensuring
-                  frictionless transition to a real Python REST backend without frontend alterations.
+                  The UI only talks to the <code>PredictionService</code> interface. When the model server is ready,
+                  set <code>VITE_PREDICTION_API_URL</code> and estimates switch over with no frontend changes.
+                  The request and response format is in the README.
                 </span>
               </div>
 
@@ -552,13 +550,43 @@ async def predict_network_quality(data: TelemetryPayload):
                   </div>
                 </div>
 
+                <div className="about__roadmap-item about__roadmap-item--done">
+                  <div className="about__roadmap-marker">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 3: Live Speed Test via Cloudflare</h4>
+                      <span className="about__status-badge about__status-badge--done">Completed</span>
+                    </div>
+                    <p>
+                      Real download, upload, latency, jitter and bufferbloat measured in the browser with Cloudflare's
+                      open-source speed test. These results are the ground truth for training and checking the model.
+                    </p>
+                  </div>
+                </div>
+                <div className="about__roadmap-item about__roadmap-item--done">
+                  <div className="about__roadmap-marker">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div className="about__roadmap-content">
+                    <div className="about__roadmap-title-row">
+                      <h4>Phase 4: Model API Client &amp; Fallback</h4>
+                      <span className="about__status-badge about__status-badge--done">Completed</span>
+                    </div>
+                    <p>
+                      Setting <code>VITE_PREDICTION_API_URL</code> routes estimates to <code>POST /predict</code>, falling back
+                      to the built-in formula if the API is unreachable.
+                    </p>
+                  </div>
+                </div>
                 <div className="about__roadmap-item about__roadmap-item--active">
                   <div className="about__roadmap-marker">
                     <Clock size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
-                      <h4>Phase 3: Dataset Generation &amp; Feature Normalization Pipeline</h4>
+                      <h4>Phase 5: Dataset Generation &amp; Feature Normalization Pipeline</h4>
                       <span className="about__status-badge about__status-badge--active">In Progress</span>
                     </div>
                     <p>
@@ -574,7 +602,7 @@ async def predict_network_quality(data: TelemetryPayload):
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
-                      <h4>Phase 4: Scikit-Learn / PyTorch Model Training &amp; Cross-Validation</h4>
+                      <h4>Phase 6: Scikit-Learn / PyTorch Model Training &amp; Cross-Validation</h4>
                       <span className="about__status-badge">Planned</span>
                     </div>
                     <p>
@@ -590,7 +618,7 @@ async def predict_network_quality(data: TelemetryPayload):
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
-                      <h4>Phase 5: FastAPI / Flask Microservice Deployment</h4>
+                      <h4>Phase 7: FastAPI / Flask Microservice Deployment</h4>
                       <span className="about__status-badge">Planned</span>
                     </div>
                     <p>

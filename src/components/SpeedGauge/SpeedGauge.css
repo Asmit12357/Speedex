@@ -1,0 +1,99 @@
+.speed-gauge {
+  --gauge-color: var(--text-muted);
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 240 / 216;
+  margin: 0 auto;
+}
+
+.speed-gauge--download { --gauge-color: var(--accent-cyan); }
+.speed-gauge--upload { --gauge-color: var(--color-electric); }
+.speed-gauge--latency { --gauge-color: var(--accent-purple); }
+
+.speed-gauge__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.speed-gauge__track,
+.speed-gauge__fill {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.speed-gauge__track {
+  stroke: var(--meter-track);
+}
+
+.speed-gauge__fill {
+  stroke: var(--gauge-color);
+  transition: stroke-dashoffset var(--duration-slow) var(--cubic-default),
+              stroke var(--duration-normal) var(--cubic-default);
+}
+
+.speed-gauge__tick line {
+  stroke: var(--border-light);
+  stroke-width: 1.5;
+}
+
+.speed-gauge__tick text {
+  fill: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.speed-gauge__readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8%;
+  pointer-events: none;
+}
+
+.speed-gauge__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gauge-color);
+}
+
+.speed-gauge__value {
+  font-size: clamp(40px, 7vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.speed-gauge__unit {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.speed-gauge--live .speed-gauge__label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--gauge-color);
+  vertical-align: middle;
+  animation: gauge-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes gauge-blink {
+  50% { opacity: 0.25; }
+}

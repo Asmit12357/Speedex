@@ -45,7 +45,8 @@
 }
 
 .overview__hero-left {
-  flex: 1;
+  /* Wraps under the CTA once there's less than ~360px beside it */
+  flex: 1 1 360px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -126,6 +127,23 @@
   font-size: 11px;
   font-family: var(--font-mono);
   color: var(--text-muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .overview__hero-right {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .overview__test-btn {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .overview__hero-title {
+    font-size: 24px;
+  }
 }
 
 /* ── Metric Cards Grid ── */
@@ -384,19 +402,6 @@
   flex-shrink: 0;
 }
 
-.tag-pill--pass {
-  background: rgba(199, 255, 0, 0.08);
-  border-color: rgba(199, 255, 0, 0.25);
-  color: var(--color-electric);
-  font-size: 10px;
-}
-
-[data-theme="light"] .tag-pill--pass {
-  background: rgba(5, 150, 105, 0.08);
-  border-color: rgba(5, 150, 105, 0.25);
-  color: #059669;
-}
-
 .overview__card-footer {
   margin-top: auto;
   padding-top: var(--sp-3);
@@ -544,4 +549,48 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
+}
+
+/* ── Empty & warning states ── */
+.overview__icon-warn {
+  color: var(--accent-red);
+}
+
+.overview__panel-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  min-height: 180px;
+  padding: var(--sp-6);
+  text-align: center;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.overview__panel-empty svg {
+  opacity: 0.5;
+}
+
+.overview__panel-empty p {
+  max-width: 300px;
+  line-height: 1.55;
+}
+
+.overview__chart-placeholder {
+  min-height: 420px;
+}
+
+/* Notes are full sentences now: let them wrap instead of clipping */
+.overview__suitability-text {
+  min-width: 0;
+}
+
+.overview__suitability-sub {
+  white-space: normal;
+  line-height: 1.45;
 }

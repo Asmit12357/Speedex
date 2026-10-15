@@ -99,8 +99,15 @@
   flex-shrink: 0;
 }
 
-.header__env-icon {
-  color: var(--accent-green);
+.header__test-chip {
+  cursor: pointer;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--duration-fast) var(--cubic-default);
+}
+
+.header__test-chip:hover {
+  border-color: var(--border-light);
 }
 
 /* ── Right: Telemetry & Controls ── */
@@ -191,10 +198,6 @@
 @media (max-width: 1260px) {
   .header {
     padding: 0 var(--sp-5);
-  }
-
-  .header__env-badge {
-    display: none;
   }
 
   .header__time-chip {

@@ -1,0 +1,315 @@
+.speedtest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 1100px;
+}
+
+.speedtest__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.speedtest__header .page-subtitle {
+  margin-bottom: 0;
+}
+
+.speedtest__server {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Console ── */
+.speedtest__console {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--sp-8);
+  align-items: center;
+  padding: var(--sp-8);
+}
+
+.speedtest__gauge-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.speedtest__progress {
+  height: 3px;
+  max-width: 320px;
+  width: 100%;
+  margin: 0 auto;
+  background: var(--meter-track);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.speedtest__progress-fill {
+  height: 100%;
+  background: var(--color-electric);
+  transition: width var(--duration-slow) var(--cubic-default);
+}
+
+.speedtest__control-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* Phase list */
+.speedtest__phases {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.speedtest__phase {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px var(--sp-4);
+  font-size: 13.5px;
+  color: var(--text-muted);
+  transition: background-color var(--duration-normal) var(--cubic-default),
+              color var(--duration-normal) var(--cubic-default);
+}
+
+.speedtest__phase + .speedtest__phase {
+  border-top: 1px solid var(--border-color);
+}
+
+.speedtest__phase-icon {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-color);
+}
+
+.speedtest__phase-label {
+  font-weight: 600;
+}
+
+.speedtest__phase-value {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.speedtest__phase--active {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.speedtest__phase--active .speedtest__phase-icon {
+  border-color: var(--color-electric);
+  color: var(--color-electric);
+}
+
+.speedtest__phase--done {
+  color: var(--text-primary);
+}
+
+.speedtest__phase--done .speedtest__phase-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Profile picker */
+.speedtest__profiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+.speedtest__profile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  transition: border-color var(--duration-fast) var(--cubic-default),
+              background-color var(--duration-fast) var(--cubic-default);
+}
+
+.speedtest__profile:hover:not(:disabled) {
+  border-color: var(--border-light);
+}
+
+.speedtest__profile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.speedtest__profile--active {
+  border-color: var(--color-electric);
+  background: var(--bg-card-hover);
+}
+
+.speedtest__profile-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.speedtest__profile-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.speedtest__cta {
+  width: 100%;
+}
+
+/* ── Samples & summary ── */
+.speedtest__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+
+.speedtest__meta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.speedtest__summary-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.speedtest__stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.speedtest__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--sp-4);
+  background: var(--bg-card);
+}
+
+.speedtest__stat dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.speedtest__stat dd {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.speedtest__stat dd small {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.speedtest__grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.speedtest__grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.speedtest__grade strong {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.speedtest__grade--great strong,
+.speedtest__grade--good strong { color: var(--accent-green); }
+.speedtest__grade--average strong { color: var(--accent-amber); }
+.speedtest__grade--poor strong,
+.speedtest__grade--bad strong { color: var(--accent-red); }
+
+.speedtest__footnote {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+@media (max-width: 1100px) {
+  .speedtest__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .speedtest__console {
+    grid-template-columns: 1fr;
+    gap: var(--sp-6);
+    padding: var(--sp-5);
+  }
+}
+
+@media (max-width: 520px) {
+  .speedtest__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .speedtest__profiles {
+    grid-template-columns: 1fr;
+  }
+}

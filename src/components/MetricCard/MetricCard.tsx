@@ -11,6 +11,8 @@ interface MetricCardProps {
   subtitle?: string;
   trend?: 'up' | 'down' | 'stable';
   trendValue?: string;
+  /** Color the trend by whether the change is good, independent of its direction */
+  trendTone?: 'good' | 'bad' | 'neutral';
   benchmark?: string;
 }
 
@@ -23,8 +25,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   trend,
   trendValue,
+  trendTone,
   benchmark,
 }) => {
+  const toneClass = trendTone ? { good: 'up', bad: 'down', neutral: 'stable' }[trendTone] : trend;
+
   return (
     <div
       className="card metric-card"
@@ -46,7 +51,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <div className="metric-card__label-row">
           <span className="metric-card__label">{label}</span>
           {trend && (
-            <div className={`metric-card__trend metric-card__trend--${trend}`}>
+            <div className={`metric-card__trend metric-card__trend--${toneClass}`}>
               {trend === 'up' && <TrendingUp size={11} />}
               {trend === 'down' && <TrendingDown size={11} />}
               {trend === 'stable' && <Minus size={11} />}

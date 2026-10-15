@@ -11,6 +11,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { PageId, AnalysisEntry, QualityCategory } from '../../types';
+import { SOURCE_LABEL, entryMetrics } from '../../utils/entryMetrics';
 import './History.css';
 
 interface HistoryProps {
@@ -21,7 +22,14 @@ interface HistoryProps {
 }
 
 type FilterTier = 'ALL' | QualityCategory;
+type FilterSource = 'all' | 'measured' | 'estimated';
 type SortOption = 'newest' | 'oldest' | 'speed_high' | 'latency_low';
+
+const SOURCE_FILTERS: ReadonlyArray<readonly [FilterSource, string]> = [
+  ['all', 'All'],
+  ['measured', 'Measured'],
+  ['estimated', 'Estimated'],
+];
 
 export default function History({
   history,
@@ -31,13 +39,14 @@ export default function History({
 }: HistoryProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTier, setFilterTier] = useState<FilterTier>('ALL');
+  const [filterSource, setFilterSource] = useState<FilterSource>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   // Summary statistics across history
   const stats = useMemo(() => {
     if (history.length === 0) return null;
     const speeds = history.map((e) => e.result.downloadSpeed);
-    const latencies = history.map((e) => e.input.latency);
+    const latencies = history.map((e) => entryMetrics(e).latencyMs);
 
     const avgSpeed = (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1);
     const maxSpeed = Math.max(...speeds).toFixed(1);
@@ -45,6 +54,7 @@ export default function History({
 
     return {
       total: history.length,
+      measured: history.filter((e) => e.result.source === 'cloudflare').length,
       avgSpeed,
       maxSpeed,
       avgLatency,
@@ -55,18 +65,22 @@ export default function History({
   const filteredHistory = useMemo(() => {
     return history
       .filter((entry) => {
-        // Tier filter
         if (filterTier !== 'ALL' && entry.result.quality !== filterTier) {
           return false;
         }
 
-        // Search filter
+        const measured = entry.result.source === 'cloudflare';
+        if ((filterSource === 'measured' && !measured) || (filterSource === 'estimated' && measured)) {
+          return false;
+        }
+
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const speedStr = String(entry.result.downloadSpeed);
           const dateStr = new Date(entry.timestamp).toLocaleString().toLowerCase();
           const qualityStr = entry.result.quality.toLowerCase();
-          return speedStr.includes(q) || dateStr.includes(q) || qualityStr.includes(q);
+          const serverStr = entry.measurement?.edge?.colo.toLowerCase() ?? '';
+          return speedStr.includes(q) || dateStr.includes(q) || qualityStr.includes(q) || serverStr.includes(q);
         }
 
         return true;
@@ -82,30 +96,36 @@ export default function History({
           return b.result.downloadSpeed - a.result.downloadSpeed;
         }
         if (sortBy === 'latency_low') {
-          return a.input.latency - b.input.latency;
+          return entryMetrics(a).latencyMs - entryMetrics(b).latencyMs;
         }
         return 0;
       });
-  }, [history, filterTier, searchQuery, sortBy]);
+  }, [history, filterTier, filterSource, searchQuery, sortBy]);
 
   const handleClearWithConfirm = () => {
-    if (window.confirm('Are you sure you want to clear your local diagnostics history?')) {
+    if (window.confirm('Clear all saved results from this browser?')) {
       onClearHistory();
     }
   };
 
   const handleExportCSV = () => {
     if (history.length === 0) return;
-    const headers = ['Timestamp', 'Quality', 'Download_Mbps', 'Latency_ms', 'Jitter_ms', 'Loss_pct', 'Signal'];
-    const rows = history.map((e) => [
-      e.timestamp,
-      e.result.quality,
-      e.result.downloadSpeed,
-      e.input.latency,
-      e.input.jitter,
-      e.input.packetLoss,
-      `${e.input.signalStrength} ${e.input.signalUnit}`,
-    ]);
+    const headers = ['Timestamp', 'Source', 'Quality', 'Download_Mbps', 'Upload_Mbps', 'Latency_ms', 'Jitter_ms', 'Loss_pct', 'Signal', 'Server'];
+    const rows = history.map((e) => {
+      const m = entryMetrics(e);
+      return [
+        e.timestamp,
+        SOURCE_LABEL[m.source],
+        e.result.quality,
+        m.downloadMbps,
+        m.uploadMbps ?? '',
+        m.latencyMs,
+        m.jitterMs,
+        m.packetLossPct ?? '',
+        m.signal ?? '',
+        m.edge?.colo ?? '',
+      ];
+    });
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -126,26 +146,25 @@ export default function History({
     return (
       <div className="history fade-in">
         <header className="history__header-empty">
-          <span className="eyebrow">Diagnostic Archive</span>
-          <h1 className="page-title">Session History</h1>
+          <span className="eyebrow">Saved results</span>
+          <h1 className="page-title">History</h1>
           <p className="page-subtitle">
-            Local browser diagnostic session logs preserved across sessions.
+            Every speed test and estimate you run, kept in this browser.
           </p>
         </header>
 
         <div className="card empty-state">
           <HistoryIcon size={40} className="empty-state__icon" />
-          <h3 className="empty-state__title">No Historical Records Stored</h3>
+          <h3 className="empty-state__title">Nothing saved yet</h3>
           <p className="empty-state__desc">
-            Your simulated throughput, SLA classification outputs, and link telemetry parameters
-            will be archived here as you run diagnostics. Zero data leaves your machine.
+            Speed tests and estimates you run are saved here, in this browser only.
           </p>
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => onNavigate('analyzer')}
+            onClick={() => onNavigate('speedtest')}
           >
-            <span>Run Diagnostic Session</span>
+            <span>Run a speed test</span>
             <ArrowRight size={14} />
           </button>
         </div>
@@ -158,13 +177,13 @@ export default function History({
       {/* ── Top Header Row ── */}
       <div className="history__header">
         <div>
-          <span className="eyebrow">Diagnostic Archive</span>
+          <span className="eyebrow">Saved results</span>
           <div className="history__title-row">
-            <h1 className="page-title">Session History</h1>
-            <span className="history__count">{history.length} SESSIONS</span>
+            <h1 className="page-title">History</h1>
+            <span className="history__count">{history.length} saved</span>
           </div>
           <p className="history__subtitle">
-            Local browser logs preserved across sessions with zero external telemetry transmission.
+            Saved in this browser only. Clearing site data removes them.
           </p>
         </div>
 
@@ -185,7 +204,7 @@ export default function History({
             onClick={handleClearWithConfirm}
           >
             <Trash2 size={14} />
-            <span>Clear Log</span>
+            <span>Clear</span>
           </button>
         </div>
       </div>
@@ -198,8 +217,10 @@ export default function History({
               <Layers size={14} />
             </div>
             <div>
-              <span className="history__stat-label">TOTAL LOGS</span>
-              <span className="history__stat-val">{stats.total}</span>
+              <span className="history__stat-label">Results</span>
+              <span className="history__stat-val">
+                {stats.total} <small>{stats.measured} measured</small>
+              </span>
             </div>
           </div>
           <div className="history__stat-item">
@@ -207,7 +228,7 @@ export default function History({
               <Zap size={14} />
             </div>
             <div>
-              <span className="history__stat-label">MEAN THROUGHPUT</span>
+              <span className="history__stat-label">Average download</span>
               <span className="history__stat-val">{stats.avgSpeed} <small>Mbps</small></span>
             </div>
           </div>
@@ -216,7 +237,7 @@ export default function History({
               <Activity size={14} />
             </div>
             <div>
-              <span className="history__stat-label">PEAK RECORDED</span>
+              <span className="history__stat-label">Best download</span>
               <span className="history__stat-val">{stats.maxSpeed} <small>Mbps</small></span>
             </div>
           </div>
@@ -225,7 +246,7 @@ export default function History({
               <Clock size={14} />
             </div>
             <div>
-              <span className="history__stat-label">AVG RTT DELAY</span>
+              <span className="history__stat-label">Average latency</span>
               <span className="history__stat-val">{stats.avgLatency} <small>ms</small></span>
             </div>
           </div>
@@ -239,38 +260,54 @@ export default function History({
           <input
             type="text"
             className="history__search-input"
-            placeholder="Search by throughput, timestamp, or tier..."
+            placeholder="Search by speed, date, quality or server…"
+            aria-label="Search history"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <div className="history__filters">
-          <div className="history__tier-pills">
+          <div className="history__tier-pills" role="group" aria-label="Filter by source">
+            {SOURCE_FILTERS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={`history__tier-pill tag-pill${filterSource === id ? ' tag-pill--active' : ''}`}
+                aria-pressed={filterSource === id}
+                onClick={() => setFilterSource(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="history__tier-pills" role="group" aria-label="Filter by quality">
             {(['ALL', 'Excellent', 'Average', 'Poor'] as const).map((tier) => (
               <button
                 key={tier}
                 type="button"
                 className={`history__tier-pill tag-pill${filterTier === tier ? ' tag-pill--active' : ''}`}
+                aria-pressed={filterTier === tier}
                 onClick={() => setFilterTier(tier)}
               >
-                {tier}
+                {tier === 'ALL' ? 'Any quality' : tier}
               </button>
             ))}
           </div>
 
           <div className="history__sort-wrap">
-            <span className="history__sort-label">ORDER:</span>
+            <span className="history__sort-label">Sort</span>
             <select
               className="history__sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
               aria-label="Sort by"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="speed_high">Fastest Throughput</option>
-              <option value="latency_low">Lowest Latency</option>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="speed_high">Fastest download</option>
+              <option value="latency_low">Lowest latency</option>
             </select>
           </div>
         </div>
@@ -281,12 +318,13 @@ export default function History({
         {filteredHistory.length === 0 ? (
           <div className="card empty-state">
             <Search size={32} className="empty-state__icon" />
-            <h3 className="empty-state__title">No Matching Diagnostics</h3>
-            <p className="empty-state__desc">No recorded session matched your current filter or search criteria.</p>
+            <h3 className="empty-state__title">No matches</h3>
+            <p className="empty-state__desc">Nothing matches these filters. Try clearing the search or picking "All".</p>
           </div>
         ) : (
           filteredHistory.map((entry) => {
-            const qualityClass = `sla-badge sla-badge--${entry.result.quality.toLowerCase()}`;
+            const m = entryMetrics(entry);
+            const qualityClass = `quality-badge quality-badge--${entry.result.quality.toLowerCase()}`;
             const formattedDate = new Date(entry.timestamp).toLocaleString(undefined, {
               month: 'short',
               day: 'numeric',
@@ -299,10 +337,8 @@ export default function History({
               <div key={entry.id} className="history__entry card">
                 <div className="history__entry-main">
                   <div className="history__entry-top">
-                    <span className={qualityClass}>
-                      <span className="sla-badge__dot" />
-                      {entry.result.quality}
-                    </span>
+                    <span className={qualityClass}>{entry.result.quality}</span>
+                    <span className={`source-badge source-badge--${m.source}`}>{SOURCE_LABEL[m.source]}</span>
                     <div className="history__entry-speed">
                       <span className="history__entry-speed-val">{entry.result.downloadSpeed}</span>
                       <span className="history__entry-speed-unit">Mbps</span>
@@ -311,22 +347,38 @@ export default function History({
                   </div>
 
                   <div className="history__entry-metrics">
+                    {m.uploadMbps !== undefined && (
+                      <div className="history__entry-metric">
+                        <span className="history__entry-metric-label">Upload</span>
+                        <span className="history__entry-metric-val">{m.uploadMbps} Mbps</span>
+                      </div>
+                    )}
                     <div className="history__entry-metric">
-                      <span className="history__entry-metric-label">RTT</span>
-                      <span className="history__entry-metric-val">{entry.input.latency} ms</span>
+                      <span className="history__entry-metric-label">Latency</span>
+                      <span className="history__entry-metric-val">{m.latencyMs} ms</span>
                     </div>
                     <div className="history__entry-metric">
                       <span className="history__entry-metric-label">Jitter</span>
-                      <span className="history__entry-metric-val">{entry.input.jitter} ms</span>
+                      <span className="history__entry-metric-val">{m.jitterMs} ms</span>
                     </div>
-                    <div className="history__entry-metric">
-                      <span className="history__entry-metric-label">Loss</span>
-                      <span className="history__entry-metric-val">{entry.input.packetLoss}%</span>
-                    </div>
-                    <div className="history__entry-metric">
-                      <span className="history__entry-metric-label">Signal</span>
-                      <span className="history__entry-metric-val">{entry.input.signalStrength} {entry.input.signalUnit}</span>
-                    </div>
+                    {m.packetLossPct !== undefined && (
+                      <div className="history__entry-metric">
+                        <span className="history__entry-metric-label">Loss</span>
+                        <span className="history__entry-metric-val">{m.packetLossPct}%</span>
+                      </div>
+                    )}
+                    {m.signal && (
+                      <div className="history__entry-metric">
+                        <span className="history__entry-metric-label">Signal</span>
+                        <span className="history__entry-metric-val">{m.signal}</span>
+                      </div>
+                    )}
+                    {m.edge && (
+                      <div className="history__entry-metric">
+                        <span className="history__entry-metric-label">Server</span>
+                        <span className="history__entry-metric-val">{m.edge.colo}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -334,9 +386,9 @@ export default function History({
                   type="button"
                   className="btn btn--outline btn--sm history__inspect-btn"
                   onClick={() => handleInspect(entry)}
-                  title="View full prediction and workload diagnostics"
+                  title="Open the full report"
                 >
-                  <span>Inspect</span>
+                  <span>Open</span>
                   <ArrowRight size={13} />
                 </button>
               </div>

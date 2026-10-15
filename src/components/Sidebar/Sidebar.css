@@ -26,6 +26,8 @@
   gap: var(--sp-3);
   padding: 0 var(--sp-5);
   border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  text-align: left;
   cursor: pointer;
   user-select: none;
   transition: background-color var(--duration-fast);
@@ -281,6 +283,26 @@
 
 .sidebar__gateway-val--highlight {
   color: var(--color-electric);
+}
+
+.sidebar__gateway-when {
+  margin-left: auto;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+.sidebar__gateway-empty {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: color var(--duration-fast) var(--cubic-default);
+}
+
+.sidebar__gateway-empty:hover {
+  color: var(--text-primary);
 }
 
 [data-theme="light"] .sidebar__gateway-val--highlight {

@@ -348,16 +348,6 @@
   min-width: 0;
 }
 
-.card__title {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .analyzer__metric-explainer {
   display: flex;
   flex-direction: column;
@@ -470,4 +460,8 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+.analyzer__probe-note {
+  margin-bottom: var(--sp-5);
 }
