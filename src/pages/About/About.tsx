@@ -9,11 +9,12 @@ import {
   Clock,
   ArrowRight,
   Workflow,
-  Sparkles,
   Server,
   Layers,
   Code2,
   Info,
+  Copy,
+  Check,
 } from 'lucide-react';
 import './About.css';
 
@@ -21,20 +22,52 @@ type AboutTab = 'architecture' | 'algorithms' | 'metrics' | 'roadmap';
 
 export default function About() {
   const [activeTab, setActiveTab] = useState<AboutTab>('architecture');
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const codeSnippet = `from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
+
+app = FastAPI(title="Speedex ML Predictor API")
+regressor = joblib.load("models/random_forest_regressor.joblib")
+classifier = joblib.load("models/random_forest_classifier.joblib")
+
+class TelemetryPayload(BaseModel):
+    latency: float
+    jitter: float
+    packetLoss: float
+    signalStrength: float
+    signalUnit: str
+
+@app.post("/api/predict")
+async def predict_network_quality(data: TelemetryPayload):
+    features = [[data.latency, data.jitter, data.packetLoss, data.signalStrength]]
+    predicted_speed = float(regressor.predict(features)[0])
+    predicted_quality = str(classifier.predict(features)[0])
+    
+    return {
+        "downloadSpeed": round(predicted_speed, 1),
+        "quality": predicted_quality,
+        "isSimulated": False,
+        "confidenceScore": 96.4
+    }`;
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(codeSnippet);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
 
   return (
     <div className="about fade-in">
       {/* ── Page Header Hero ── */}
       <div className="about__hero card">
         <div className="about__hero-meta">
-          <span className="demo-badge">
-            <Sparkles size={12} />
-            Academic &amp; Systems Architecture
-          </span>
-          <h1 className="about__hero-title">Internet Speed &amp; Network Quality Predictor</h1>
+          <span className="eyebrow">Academic &amp; Systems Architecture</span>
+          <h1 className="about__hero-title">Dual-Task Network Quality &amp; Bandwidth Framework</h1>
           <p className="about__hero-desc">
-            A dual-task machine learning framework designed to evaluate physical and transport-layer
-            telemetry and predict continuous throughput and discrete SLA operational health without
+            A predictive machine learning architecture designed to evaluate physical and transport-layer
+            telemetry and infer continuous throughput and discrete SLA operational health without
             saturating end-user bandwidth.
           </p>
         </div>
@@ -43,34 +76,34 @@ export default function About() {
         <div className="about__nav-tabs">
           <button
             type="button"
-            className={`about__nav-tab${activeTab === 'architecture' ? ' about__nav-tab--active' : ''}`}
+            className={`about__nav-tab tag-pill${activeTab === 'architecture' ? ' tag-pill--active' : ''}`}
             onClick={() => setActiveTab('architecture')}
           >
-            <Workflow size={15} />
+            <Workflow size={13} />
             <span>Architecture &amp; Features</span>
           </button>
           <button
             type="button"
-            className={`about__nav-tab${activeTab === 'algorithms' ? ' about__nav-tab--active' : ''}`}
+            className={`about__nav-tab tag-pill${activeTab === 'algorithms' ? ' tag-pill--active' : ''}`}
             onClick={() => setActiveTab('algorithms')}
           >
-            <Cpu size={15} />
+            <Cpu size={13} />
             <span>Candidate Models</span>
           </button>
           <button
             type="button"
-            className={`about__nav-tab${activeTab === 'metrics' ? ' about__nav-tab--active' : ''}`}
+            className={`about__nav-tab tag-pill${activeTab === 'metrics' ? ' tag-pill--active' : ''}`}
             onClick={() => setActiveTab('metrics')}
           >
-            <BarChart3 size={15} />
+            <BarChart3 size={13} />
             <span>Evaluation Metrics</span>
           </button>
           <button
             type="button"
-            className={`about__nav-tab${activeTab === 'roadmap' ? ' about__nav-tab--active' : ''}`}
+            className={`about__nav-tab tag-pill${activeTab === 'roadmap' ? ' tag-pill--active' : ''}`}
             onClick={() => setActiveTab('roadmap')}
           >
-            <GitBranch size={15} />
+            <GitBranch size={13} />
             <span>Roadmap &amp; API Spec</span>
           </button>
         </div>
@@ -82,8 +115,8 @@ export default function About() {
           {/* Section 1: Objective */}
           <section className="about__section">
             <h2 className="about__section-title">
-              <Target size={20} className="about__icon-cyan" />
-              Dual-Task System Objective
+              <Target size={18} className="about__icon-lime" />
+              <span>Dual-Task System Objective</span>
             </h2>
             <p className="about__section-desc">
               Conventional speed tests saturate user links with heavy multi-megabyte payloads, causing
@@ -93,9 +126,12 @@ export default function About() {
 
             <div className="about__task-grid">
               <div className="card about__task-card">
-                <span className="about__task-card-type about__task-card-type--regression">
-                  Task 1 — Continuous Regression
-                </span>
+                <div className="about__task-card-header">
+                  <span className="about__task-card-num">01</span>
+                  <span className="about__task-card-type about__task-card-type--regression">
+                    Task 1 — Continuous Regression
+                  </span>
+                </div>
                 <h3 className="about__task-card-name">Bandwidth Throughput Prediction (Mbps)</h3>
                 <p className="about__task-card-desc">
                   Models continuous non-linear relationship between RTT latency, packet jitter variance,
@@ -107,9 +143,12 @@ export default function About() {
               </div>
 
               <div className="card about__task-card">
-                <span className="about__task-card-type about__task-card-type--classification">
-                  Task 2 — Multi-Class Classification
-                </span>
+                <div className="about__task-card-header">
+                  <span className="about__task-card-num">02</span>
+                  <span className="about__task-card-type about__task-card-type--classification">
+                    Task 2 — Multi-Class Classification
+                  </span>
+                </div>
                 <h3 className="about__task-card-name">SLA Network Quality Classification</h3>
                 <p className="about__task-card-desc">
                   Categorizes link operational state into discrete SLA boundaries:
@@ -126,8 +165,8 @@ export default function About() {
           {/* Section 2: Input Features */}
           <section className="about__section">
             <h2 className="about__section-title">
-              <Database size={20} className="about__icon-cyan" />
-              Input Telemetry Vector [4 Primary Dimensions]
+              <Database size={18} className="about__icon-lime" />
+              <span>Input Telemetry Vector [4 Primary Dimensions]</span>
             </h2>
             <p className="about__section-desc">
               Extracted from transport protocols (ICMP/TCP/UDP) and wireless physical-layer link budgets:
@@ -142,7 +181,7 @@ export default function About() {
                 <p className="about__feature-desc">
                   Propagation delay for round-trip datagram transit. Primary factor governing interactive TCP acknowledgment pacing.
                 </p>
-                <div className="about__benchmark-tag">Ideal: &lt; 30 ms</div>
+                <div className="about__benchmark-tag">BENCHMARK: &lt; 30 ms</div>
               </div>
 
               <div className="card about__feature-card">
@@ -153,7 +192,7 @@ export default function About() {
                 <p className="about__feature-desc">
                   Statistical variance in packet arrival intervals. Excessive jitter induces transport buffer overflows and jitter-buffer latency.
                 </p>
-                <div className="about__benchmark-tag">Ideal: &lt; 5 ms</div>
+                <div className="about__benchmark-tag">BENCHMARK: &lt; 5 ms</div>
               </div>
 
               <div className="card about__feature-card">
@@ -164,18 +203,18 @@ export default function About() {
                 <p className="about__feature-desc">
                   Fraction of lost datagrams requiring congestion-backoff retransmissions, heavily penalizing TCP congestion window sizes.
                 </p>
-                <div className="about__benchmark-tag">Ideal: &lt; 0.5%</div>
+                <div className="about__benchmark-tag">BENCHMARK: &lt; 0.5%</div>
               </div>
 
               <div className="card about__feature-card">
                 <div className="about__feature-header">
                   <span className="about__feature-name">Received Signal Power (RSSI)</span>
-                  <span className="about__feature-unit">dBm or %</span>
+                  <span className="about__feature-unit">dBm / %</span>
                 </div>
                 <p className="about__feature-desc">
                   Physical link budget measuring radio-frequency signal power at device antenna, dictating MCS modulation tiers.
                 </p>
-                <div className="about__benchmark-tag">Ideal: &gt; -55 dBm</div>
+                <div className="about__benchmark-tag">BENCHMARK: &gt; -55 dBm</div>
               </div>
             </div>
           </section>
@@ -183,51 +222,51 @@ export default function About() {
           {/* Section: Pipeline Flowchart */}
           <section className="about__section">
             <h2 className="about__section-title">
-              <Workflow size={20} className="about__icon-cyan" />
-              Machine Learning Workflow Pipeline
+              <Workflow size={18} className="about__icon-lime" />
+              <span>Machine Learning Workflow Pipeline</span>
             </h2>
 
             <div className="card about__pipeline-card">
               <div className="about__pipeline-steps">
                 <div className="about__pipeline-step">
-                  <span className="about__pipeline-step-num">01</span>
-                  <h4>Telemetry Collection</h4>
+                  <span className="about__pipeline-step-num">01 // TELEMETRY</span>
+                  <h4>Collection</h4>
                   <p>ICMP ping sampling, RTT tracking, and RF signal interrogation.</p>
                 </div>
                 <div className="about__pipeline-arrow">
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </div>
 
                 <div className="about__pipeline-step">
-                  <span className="about__pipeline-step-num">02</span>
-                  <h4>Preprocessing &amp; Normalization</h4>
+                  <span className="about__pipeline-step-num">02 // NORMALIZATION</span>
+                  <h4>Preprocessing</h4>
                   <p>Z-Score scaling, dBm to [0,1] normalization, outlier filtering.</p>
                 </div>
                 <div className="about__pipeline-arrow">
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </div>
 
                 <div className="about__pipeline-step">
-                  <span className="about__pipeline-step-num">03</span>
+                  <span className="about__pipeline-step-num">03 // FEATURE ENG</span>
                   <h4>Feature Engineering</h4>
                   <p>Interaction terms: RTT × Jitter, Loss penalties, Signal SNR ratios.</p>
                 </div>
                 <div className="about__pipeline-arrow">
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </div>
 
                 <div className="about__pipeline-step">
-                  <span className="about__pipeline-step-num">04</span>
+                  <span className="about__pipeline-step-num">04 // DUAL-TASK ML</span>
                   <h4>Dual-Task Training</h4>
                   <p>Regression on Mbps target + Random Forest classification on SLA.</p>
                 </div>
                 <div className="about__pipeline-arrow">
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </div>
 
                 <div className="about__pipeline-step">
-                  <span className="about__pipeline-step-num">05</span>
-                  <h4>FastAPI Inference</h4>
+                  <span className="about__pipeline-step-num">05 // FASTAPI</span>
+                  <h4>Inference</h4>
                   <p>Sub-millisecond model inference served over JSON REST API.</p>
                 </div>
               </div>
@@ -241,8 +280,8 @@ export default function About() {
         <div className="about__tab-content fade-in">
           <section className="about__section">
             <h2 className="about__section-title">
-              <Cpu size={20} className="about__icon-cyan" />
-              Candidate Machine Learning Models
+              <Cpu size={18} className="about__icon-lime" />
+              <span>Candidate Machine Learning Models</span>
             </h2>
             <p className="about__section-desc">
               Four supervised algorithms evaluated across inference latency, non-linear representation,
@@ -251,7 +290,7 @@ export default function About() {
 
             <div className="about__cards-grid">
               <div className="card about__algo-card">
-                <div className="about__algo-badge about__algo-badge--regression">Regression Baseline</div>
+                <div className="about__algo-badge about__algo-badge--regression">REGRESSION BASELINE</div>
                 <h3 className="about__algo-name">Linear Regression</h3>
                 <p className="about__algo-desc">
                   Parametric baseline establishing linear coefficients for direct latency and attenuation penalties.
@@ -265,7 +304,7 @@ export default function About() {
               </div>
 
               <div className="card about__algo-card">
-                <div className="about__algo-badge about__algo-badge--regression">Ensemble Regressor</div>
+                <div className="about__algo-badge about__algo-badge--regression">ENSEMBLE REGRESSOR</div>
                 <h3 className="about__algo-name">Random Forest Regressor</h3>
                 <p className="about__algo-desc">
                   Ensemble of bootstrapped decision trees capturing sharp non-linear degradation cliffs (such as sudden
@@ -279,7 +318,7 @@ export default function About() {
               </div>
 
               <div className="card about__algo-card">
-                <div className="about__algo-badge about__algo-badge--classification">Rule-Based Classifier</div>
+                <div className="about__algo-badge about__algo-badge--classification">RULE-BASED CLASSIFIER</div>
                 <h3 className="about__algo-name">Decision Tree Classifier</h3>
                 <p className="about__algo-desc">
                   Deterministic orthogonal splits providing human-readable decision logic directly matching
@@ -293,7 +332,7 @@ export default function About() {
               </div>
 
               <div className="card about__algo-card">
-                <div className="about__algo-badge about__algo-badge--classification">Ensemble Classifier</div>
+                <div className="about__algo-badge about__algo-badge--classification">ENSEMBLE CLASSIFIER</div>
                 <h3 className="about__algo-name">Random Forest Classifier</h3>
                 <p className="about__algo-desc">
                   Ensemble bagging model that minimizes variance across edge cases, stabilizing quality classification
@@ -311,8 +350,8 @@ export default function About() {
           {/* Model Comparison Table */}
           <section className="about__section">
             <h2 className="about__section-title">
-              <Layers size={18} className="about__icon-cyan" />
-              Algorithmic Comparison Matrix
+              <Layers size={18} className="about__icon-lime" />
+              <span>Algorithmic Comparison Matrix</span>
             </h2>
 
             <div className="card about__table-card">
@@ -339,7 +378,7 @@ export default function About() {
                     <td>Continuous Speed</td>
                     <td>&lt; 2.5 ms</td>
                     <td>Excellent</td>
-                    <td><span className="about__tag about__tag--cyan">Primary Regression Engine</span></td>
+                    <td><span className="about__tag about__tag--lime">Primary Regression Engine</span></td>
                   </tr>
                   <tr>
                     <td><strong>Decision Tree Classifier</strong></td>
@@ -353,7 +392,7 @@ export default function About() {
                     <td>SLA Quality Tier</td>
                     <td>&lt; 2.8 ms</td>
                     <td>High (Ensemble Majority)</td>
-                    <td><span className="about__tag about__tag--cyan">Primary Classifier Engine</span></td>
+                    <td><span className="about__tag about__tag--lime">Primary Classifier Engine</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -367,8 +406,8 @@ export default function About() {
         <div className="about__tab-content fade-in">
           <section className="about__section">
             <h2 className="about__section-title">
-              <BarChart3 size={20} className="about__icon-cyan" />
-              Model Performance Evaluation Protocol
+              <BarChart3 size={18} className="about__icon-lime" />
+              <span>Model Performance Evaluation Protocol</span>
             </h2>
             <p className="about__section-desc">
               Evaluation metrics tailored to balance continuous error bounds with classification reliability:
@@ -466,8 +505,8 @@ export default function About() {
         <div className="about__tab-content fade-in">
           <section className="about__section">
             <h2 className="about__section-title">
-              <GitBranch size={20} className="about__icon-cyan" />
-              Project Development Roadmap &amp; Current Status
+              <GitBranch size={18} className="about__icon-lime" />
+              <span>Project Development Roadmap &amp; Current Status</span>
             </h2>
 
             <div className="card about__status-card">
@@ -483,7 +522,7 @@ export default function About() {
               <div className="about__roadmap-list">
                 <div className="about__roadmap-item about__roadmap-item--done">
                   <div className="about__roadmap-marker">
-                    <CheckCircle2 size={18} />
+                    <CheckCircle2 size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
@@ -499,7 +538,7 @@ export default function About() {
 
                 <div className="about__roadmap-item about__roadmap-item--done">
                   <div className="about__roadmap-marker">
-                    <CheckCircle2 size={18} />
+                    <CheckCircle2 size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
@@ -515,7 +554,7 @@ export default function About() {
 
                 <div className="about__roadmap-item about__roadmap-item--active">
                   <div className="about__roadmap-marker">
-                    <Clock size={18} />
+                    <Clock size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
@@ -531,7 +570,7 @@ export default function About() {
 
                 <div className="about__roadmap-item">
                   <div className="about__roadmap-marker">
-                    <Clock size={18} />
+                    <Clock size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
@@ -547,7 +586,7 @@ export default function About() {
 
                 <div className="about__roadmap-item">
                   <div className="about__roadmap-marker">
-                    <Server size={18} />
+                    <Server size={16} />
                   </div>
                   <div className="about__roadmap-content">
                     <div className="about__roadmap-title-row">
@@ -567,42 +606,32 @@ export default function About() {
           {/* Code Integration Example */}
           <section className="about__section">
             <h2 className="about__section-title">
-              <Code2 size={18} className="about__icon-cyan" />
-              REST API Drop-In Integration Spec
+              <Code2 size={18} className="about__icon-lime" />
+              <span>REST API Drop-In Integration Spec</span>
             </h2>
             <div className="card about__code-card">
               <div className="about__code-header">
-                <span>FastAPI Python Endpoint (Target Implementation)</span>
-                <span className="about__code-lang">Python 3.11</span>
+                <div className="about__code-header-left">
+                  <span className="about__code-dot" />
+                  <span className="about__code-dot" />
+                  <span className="about__code-dot" />
+                  <span className="about__code-filename">fastapi_server.py</span>
+                </div>
+                <div className="about__code-header-right">
+                  <span className="about__code-lang">Python 3.11</span>
+                  <button
+                    type="button"
+                    className="about__code-copy-btn"
+                    onClick={handleCopyCode}
+                    title="Copy API integration code"
+                  >
+                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedCode ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
               </div>
               <pre className="about__code-block">
-{`from fastapi import FastAPI
-from pydantic import BaseModel
-import joblib
-
-app = FastAPI(title="Speedex ML Predictor API")
-regressor = joblib.load("models/random_forest_regressor.joblib")
-classifier = joblib.load("models/random_forest_classifier.joblib")
-
-class TelemetryPayload(BaseModel):
-    latency: float
-    jitter: float
-    packetLoss: float
-    signalStrength: float
-    signalUnit: str
-
-@app.post("/api/predict")
-async def predict_network_quality(data: TelemetryPayload):
-    features = [[data.latency, data.jitter, data.packetLoss, data.signalStrength]]
-    predicted_speed = float(regressor.predict(features)[0])
-    predicted_quality = str(classifier.predict(features)[0])
-    
-    return {
-        "downloadSpeed": round(predicted_speed, 1),
-        "quality": predicted_quality,
-        "isSimulated": False,
-        "confidenceScore": 96.4
-    }`}
+                <code>{codeSnippet}</code>
               </pre>
             </div>
           </section>

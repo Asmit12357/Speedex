@@ -1,5 +1,5 @@
 /* ================================================================
-   Header Component Styles
+   Header Component Styles — Big Company Engineering Standard
    ================================================================ */
 
 .header {
@@ -13,77 +13,123 @@
   justify-content: space-between;
   padding: 0 var(--sp-8);
   background: var(--header-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
   z-index: 50;
-  transition: left var(--duration-normal) var(--ease-out),
-              background-color var(--duration-normal) var(--ease-out),
-              border-color var(--duration-normal) var(--ease-out);
+  box-sizing: border-box;
+  transition: left var(--duration-normal) var(--cubic-default),
+              background-color var(--duration-normal) var(--cubic-default),
+              border-color var(--duration-normal) var(--cubic-default);
 }
 
-/* ── Left: titles ── */
+/* ── Left: Breadcrumb & Context ── */
 .header__left {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.header__title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.header__title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.2px;
-}
-
-.header__version-pill {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent-cyan);
-  background: rgba(14, 165, 233, 0.1);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  letter-spacing: 0.3px;
-  font-family: var(--font-mono);
-}
-
-.header__subtitle {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.3;
-}
-
-/* ── Right: Chips & Badges ── */
-.header__right {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  margin-right: var(--sp-3);
+}
+
+.header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  letter-spacing: -0.015em;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--border-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--color-electric);
   flex-shrink: 0;
 }
 
-.header__status-chip {
+[data-theme="light"] .header__brand-mark {
+  color: #141313;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.header__breadcrumb-root {
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.header__breadcrumb-slash {
+  color: var(--text-dim);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+.header__breadcrumb-current {
+  color: var(--text-secondary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header__env-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header__env-icon {
+  color: var(--accent-green);
+}
+
+/* ── Right: Telemetry & Controls ── */
+.header__right {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.header__status-chip,
+.header__node-chip,
+.header__time-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
   font-weight: 500;
   color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.header__node-icon {
+  color: var(--accent-cyan);
 }
 
 .header__icon-green {
@@ -99,17 +145,9 @@
   font-weight: 600;
 }
 
-.header__time-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
+.header__time-text {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* ── Theme Toggle Button ── */
@@ -121,11 +159,14 @@
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
   font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--duration-fast);
+  white-space: nowrap;
+  transition: all var(--duration-fast) var(--cubic-default);
 }
 
 .header__theme-btn:hover {
@@ -135,35 +176,25 @@
 }
 
 .header__theme-icon--sun {
-  color: var(--accent-yellow);
+  color: #fbbf24;
 }
 
 .header__theme-icon--moon {
-  color: var(--accent-indigo);
+  color: var(--accent-purple);
 }
 
 .header__theme-label {
   font-size: 11px;
 }
 
-.header__demo-chip {
-  cursor: help;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  color: var(--accent-yellow);
-}
-
-.header__help-icon {
-  opacity: 0.6;
-  margin-left: 2px;
-}
-
 /* ── Responsive adjustments ── */
-@media (max-width: 1024px) {
+@media (max-width: 1260px) {
   .header {
-    left: 0;
-    padding: 0 var(--sp-4);
-    padding-left: 56px; /* Space for hamburger toggle */
+    padding: 0 var(--sp-5);
+  }
+
+  .header__env-badge {
+    display: none;
   }
 
   .header__time-chip {
@@ -171,12 +202,24 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .header {
+    left: 0;
+    padding: 0 var(--sp-4);
+    padding-left: 60px; /* Space for sidebar toggle */
+  }
+
+  .header__node-chip {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
-  .header__subtitle {
+  .header__breadcrumb-current {
     display: none;
   }
 
-  .header__status-chip {
+  .header__breadcrumb-slash {
     display: none;
   }
 
@@ -186,10 +229,7 @@
 }
 
 @media (max-width: 480px) {
-  .header__version-pill {
+  .header__status-chip {
     display: none;
-  }
-  .header__title {
-    font-size: 14px;
   }
 }

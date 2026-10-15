@@ -5,15 +5,10 @@ import {
   Activity,
   AlertTriangle,
   Wifi,
-  PlayCircle,
   RotateCcw,
-  Search,
   Zap,
-  Sparkles,
-  CheckCircle2,
-  SlidersHorizontal,
-  Layers,
-  ArrowRight,
+  ShieldCheck,
+  BookmarkCheck,
 } from 'lucide-react';
 import type { NetworkInput, SignalUnit } from '../../types';
 import { DEMO_VALUES, PRESET_SCENARIOS } from '../../services/mockPredictionService';
@@ -149,11 +144,10 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
     setIsDetecting(true);
     try {
       const startTime = performance.now();
-      // Probe origin
       await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
       const duration = Math.round(performance.now() - startTime);
 
-      const detectedLatency = Math.max(4, Math.min(60, duration));
+      const detectedLatency = Math.max(6, Math.min(60, duration));
       const detectedJitter = Math.round(Math.max(0.5, detectedLatency * 0.12) * 10) / 10;
 
       setValues({
@@ -191,29 +185,28 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
     [values, onAnalyse]
   );
 
-  // Live status evaluation helper
   const getLatencyTier = (val: string) => {
     if (!val) return null;
     const n = Number(val);
-    if (n < 30) return { text: 'Optimal (Tier 1)', class: 'good' };
-    if (n < 80) return { text: 'Acceptable', class: 'fair' };
-    return { text: 'High Latency', class: 'poor' };
+    if (n < 30) return { text: '< 30ms Optimal', class: 'good' };
+    if (n < 80) return { text: '30-80ms Acceptable', class: 'fair' };
+    return { text: '> 80ms High Delay', class: 'poor' };
   };
 
   const getJitterTier = (val: string) => {
     if (!val) return null;
     const n = Number(val);
-    if (n < 5) return { text: 'Stable (Low PDV)', class: 'good' };
-    if (n < 15) return { text: 'Moderate Variance', class: 'fair' };
-    return { text: 'Unstable Jitter', class: 'poor' };
+    if (n < 5) return { text: '< 5ms Low PDV', class: 'good' };
+    if (n < 15) return { text: '5-15ms Moderate', class: 'fair' };
+    return { text: '> 15ms Unstable', class: 'poor' };
   };
 
   const getLossTier = (val: string) => {
     if (!val) return null;
     const n = Number(val);
-    if (n < 0.5) return { text: 'Optimal (<0.5%)', class: 'good' };
-    if (n < 2.5) return { text: 'Noticeable Loss', class: 'fair' };
-    return { text: 'Severe Loss', class: 'poor' };
+    if (n < 0.5) return { text: '< 0.5% Carrier Grade', class: 'good' };
+    if (n < 2.5) return { text: '0.5-2.5% Noticeable', class: 'fair' };
+    return { text: '> 2.5% Severe Drops', class: 'poor' };
   };
 
   const latencyTier = getLatencyTier(values.latency);
@@ -222,30 +215,14 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
 
   return (
     <div className="analyzer fade-in">
-      {/* ── Workflow Stepper ── */}
-      <div className="analyzer__stepper card">
-        <div className="analyzer__step analyzer__step--active">
-          <div className="analyzer__step-number">1</div>
-          <div className="analyzer__step-meta">
-            <span className="analyzer__step-label">Step 1</span>
-            <span className="analyzer__step-title">Telemetry Acquisition</span>
-          </div>
-        </div>
-        <div className="analyzer__step-divider" />
-        <div className="analyzer__step">
-          <div className="analyzer__step-number">2</div>
-          <div className="analyzer__step-meta">
-            <span className="analyzer__step-label">Step 2</span>
-            <span className="analyzer__step-title">ML Predictive Inference</span>
-          </div>
-        </div>
-        <div className="analyzer__step-divider" />
-        <div className="analyzer__step">
-          <div className="analyzer__step-number">3</div>
-          <div className="analyzer__step-meta">
-            <span className="analyzer__step-label">Step 3</span>
-            <span className="analyzer__step-title">SLA Classification &amp; Report</span>
-          </div>
+      {/* ── Console Header ── */}
+      <div className="analyzer__header">
+        <div>
+          <span className="eyebrow">Diagnostic Workspace</span>
+          <h1 className="page-title">Network Telemetry Analyzer</h1>
+          <p className="page-subtitle">
+            Configure transport-layer telemetry parameters or apply a calibrated link profile to run dual-task ML bandwidth inference and ITU-T SLA evaluation.
+          </p>
         </div>
       </div>
 
@@ -256,10 +233,10 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
           <div className="card analyzer__scenarios-card">
             <div className="analyzer__scenarios-header">
               <div className="analyzer__scenarios-title">
-                <SlidersHorizontal size={16} className="analyzer__icon-cyan" />
-                <span>Quick Scenario Presets</span>
+                <BookmarkCheck size={14} className="analyzer__scenario-icon" />
+                <span>Calibrated Link Profiles</span>
               </div>
-              <span className="analyzer__scenarios-hint">Click any preset to auto-load realistic parameters</span>
+              <span className="analyzer__scenarios-hint">Load realistic transport characteristics</span>
             </div>
 
             <div className="analyzer__scenarios-list">
@@ -267,12 +244,11 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 <button
                   key={sc.id}
                   type="button"
-                  className={`analyzer__scenario-chip${selectedScenarioId === sc.id ? ' analyzer__scenario-chip--active' : ''}`}
+                  className={`tag-pill analyzer__scenario-chip${selectedScenarioId === sc.id ? ' analyzer__scenario-chip--active' : ''}`}
                   onClick={() => handleApplyScenario(sc.id)}
                   title={sc.description}
                 >
                   <span className="analyzer__scenario-name">{sc.name}</span>
-                  <span className="analyzer__scenario-cat">{sc.category}</span>
                 </button>
               ))}
             </div>
@@ -284,17 +260,17 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
               <div className="analyzer__loading-overlay">
                 <div className="analyzer__loading-content">
                   <span className="spinner" />
-                  <h3>Executing ML Regression Model…</h3>
-                  <p>Calculating dual-task bandwidth curves and multi-class SLA tier.</p>
+                  <h3>Running Dual-Task Regressor…</h3>
+                  <p>Inference pipeline calculating throughput bandwidth curve and SLA tier classification.</p>
                 </div>
               </div>
             )}
 
             <div className="analyzer__form-header">
-              <h2 className="analyzer__section-title">
-                <Layers size={18} className="analyzer__icon-cyan" />
-                Network Telemetry Parameters
-              </h2>
+              <div>
+                <span className="eyebrow">Input Telemetry</span>
+                <h2 className="analyzer__section-title">Transport Layer Parameters</h2>
+              </div>
               <button
                 type="button"
                 className="btn btn--secondary btn--sm"
@@ -304,12 +280,12 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 {isDetecting ? (
                   <>
                     <span className="spinner" />
-                    Probing link…
+                    <span>Measuring delay…</span>
                   </>
                 ) : (
                   <>
-                    <Zap size={14} />
-                    Auto-Probe Local Ping
+                    <Zap size={13} />
+                    <span>Auto-Probe Link</span>
                   </>
                 )}
               </button>
@@ -327,7 +303,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                   )}
                 </label>
                 <div className="analyzer__input-wrap">
-                  <Clock size={16} className="analyzer__input-icon" />
+                  <Clock size={15} className="analyzer__input-icon" />
                   <input
                     id="latency"
                     className={`input-field analyzer__input-field${errors.latency ? ' input-field--error' : ''}`}
@@ -340,12 +316,13 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                     onChange={updateField('latency')}
                     disabled={isAnalysing}
                   />
+                  <span className="analyzer__input-unit">ms</span>
                 </div>
                 {errors.latency ? (
                   <span className="input-error">{errors.latency}</span>
                 ) : (
                   <span className="input-hint">
-                    ICMP round-trip propagation delay. Ideal: &lt; 30 ms. High delay impairs interactive sessions.
+                    ICMP round-trip propagation delay. SLA target: &lt; 30 ms.
                   </span>
                 )}
               </div>
@@ -361,7 +338,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                   )}
                 </label>
                 <div className="analyzer__input-wrap">
-                  <Activity size={16} className="analyzer__input-icon" />
+                  <Activity size={15} className="analyzer__input-icon" />
                   <input
                     id="jitter"
                     className={`input-field analyzer__input-field${errors.jitter ? ' input-field--error' : ''}`}
@@ -374,12 +351,13 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                     onChange={updateField('jitter')}
                     disabled={isAnalysing}
                   />
+                  <span className="analyzer__input-unit">ms</span>
                 </div>
                 {errors.jitter ? (
                   <span className="input-error">{errors.jitter}</span>
                 ) : (
                   <span className="input-hint">
-                    Packet Delay Variation (PDV). Critical for real-time VoIP and video streams (&lt; 5 ms).
+                    Packet Delay Variation (PDV). Crucial for real-time WebRTC &amp; gaming.
                   </span>
                 )}
               </div>
@@ -387,7 +365,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
               {/* Packet Loss Input */}
               <div className="input-group">
                 <label htmlFor="packetLoss">
-                  <span>Packet Loss (%)</span>
+                  <span>Packet Loss Rate (%)</span>
                   {lossTier && (
                     <span className={`analyzer__tier-tag analyzer__tier-tag--${lossTier.class}`}>
                       {lossTier.text}
@@ -395,7 +373,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                   )}
                 </label>
                 <div className="analyzer__input-wrap">
-                  <AlertTriangle size={16} className="analyzer__input-icon" />
+                  <AlertTriangle size={15} className="analyzer__input-icon" />
                   <input
                     id="packetLoss"
                     className={`input-field analyzer__input-field${errors.packetLoss ? ' input-field--error' : ''}`}
@@ -408,12 +386,13 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                     onChange={updateField('packetLoss')}
                     disabled={isAnalysing}
                   />
+                  <span className="analyzer__input-unit">%</span>
                 </div>
                 {errors.packetLoss ? (
                   <span className="input-error">{errors.packetLoss}</span>
                 ) : (
                   <span className="input-hint">
-                    Transport-layer drop rate. Even 1% forces heavy TCP window reduction and retransmissions.
+                    Transport packet drop ratio. Even 1% loss degrades TCP flow control.
                   </span>
                 )}
               </div>
@@ -421,12 +400,12 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
               {/* Signal Strength Input */}
               <div className="input-group">
                 <label htmlFor="signalStrength">
-                  <span>Physical Signal (RSSI)</span>
+                  <span>Radio Signal (RSSI)</span>
                   <span className="analyzer__unit-label">{values.signalUnit}</span>
                 </label>
                 <div className="analyzer__signal-row">
                   <div className="analyzer__input-wrap analyzer__input-wrap--flex">
-                    <Wifi size={16} className="analyzer__input-icon" />
+                    <Wifi size={15} className="analyzer__input-icon" />
                     <input
                       id="signalStrength"
                       className={`input-field analyzer__input-field${errors.signalStrength ? ' input-field--error' : ''}`}
@@ -456,7 +435,7 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
                 ) : (
                   <span className="input-hint">
                     {values.signalUnit === 'dBm'
-                      ? 'Link budget: -30 dBm (near router) to -80 dBm (edge of coverage).'
+                      ? 'Link budget: -30 dBm (strong) to -85 dBm (fringe).'
                       : 'Wireless signal percentage.'}
                   </span>
                 )}
@@ -469,35 +448,37 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
             <div className="analyzer__actions">
               <button
                 type="button"
-                className="btn btn--secondary"
+                className="btn btn--secondary btn--sm"
                 onClick={handleDemoValues}
                 disabled={isAnalysing}
               >
-                <PlayCircle size={15} />
-                <span>Load Default Demo</span>
+                <span>Load Default Values</span>
               </button>
 
               <button
                 type="button"
-                className="btn btn--ghost"
+                className="btn btn--ghost btn--sm"
                 onClick={handleReset}
                 disabled={isAnalysing}
               >
-                <RotateCcw size={15} />
-                <span>Reset Fields</span>
+                <RotateCcw size={13} />
+                <span>Reset</span>
               </button>
 
-              <button type="submit" className="btn btn--primary analyzer__submit-btn" disabled={isAnalysing}>
+              <button
+                type="submit"
+                className="btn btn--primary analyzer__submit-btn"
+                disabled={isAnalysing}
+              >
                 {isAnalysing ? (
                   <>
                     <span className="spinner" />
-                    <span>Predicting Network…</span>
+                    <span>Executing Model…</span>
                   </>
                 ) : (
                   <>
-                    <Search size={16} />
-                    <span>Predict Quality &amp; Speed</span>
-                    <ArrowRight size={14} />
+                    <Zap size={14} />
+                    <span>Run Dual-Task Prediction</span>
                   </>
                 )}
               </button>
@@ -508,73 +489,75 @@ export default function Analyzer({ onAnalyse, isAnalysing }: AnalyzerProps) {
         {/* ── Side Educational & Benchmark Panel ── */}
         <aside className="analyzer__sidebar">
           <div className="card analyzer__info-panel">
-            <h3 className="card__title">
-              <span>Telemetry Reference Standards</span>
-              <Sparkles size={14} className="analyzer__icon-cyan" />
-            </h3>
+            <div className="analyzer__side-header">
+              <span className="eyebrow">Observability Standards</span>
+              <h3 className="card__title">
+                <span>ITU-T Telemetry Reference</span>
+              </h3>
+            </div>
 
             <div className="analyzer__metric-explainer">
               <div className="analyzer__explainer-item">
                 <div className="analyzer__explainer-top">
-                  <Clock size={16} className="analyzer__explainer-icon analyzer__explainer-icon--blue" />
+                  <Clock size={14} className="analyzer__explainer-icon analyzer__explainer-icon--blue" />
                   <span className="analyzer__explainer-title">Round-Trip Latency (RTT)</span>
                 </div>
                 <p className="analyzer__explainer-text">
-                  Time required for a network packet to travel to destination and return.
+                  Time elapsed for an ICMP/UDP packet to reach target gateway and return.
                 </p>
                 <div className="analyzer__explainer-benchmark">
-                  <span>ITU Standard:</span>
-                  <strong>&lt; 30 ms Optimal | 30–80 ms Fair | &gt; 80 ms Degraded</strong>
+                  <span>ITU-T Y.1541:</span>
+                  <strong>&lt; 30ms Optimal | 30–80ms Fair | &gt; 80ms High</strong>
                 </div>
               </div>
 
               <div className="analyzer__explainer-item">
                 <div className="analyzer__explainer-top">
-                  <Activity size={16} className="analyzer__explainer-icon analyzer__explainer-icon--indigo" />
+                  <Activity size={14} className="analyzer__explainer-icon analyzer__explainer-icon--indigo" />
                   <span className="analyzer__explainer-title">Packet Jitter (PDV)</span>
                 </div>
                 <p className="analyzer__explainer-text">
-                  Statistical variability in packet latency. High jitter causes buffer under-runs.
+                  Statistical packet delay variation. High jitter introduces buffer underrun.
                 </p>
                 <div className="analyzer__explainer-benchmark">
-                  <span>RFC Benchmark:</span>
-                  <strong>&lt; 5 ms Voip Ready | 5–15 ms Fair | &gt; 15 ms Jittery</strong>
+                  <span>RFC 3550:</span>
+                  <strong>&lt; 5ms VoIP Ready | 5–15ms Fair | &gt; 15ms Jittery</strong>
                 </div>
               </div>
 
               <div className="analyzer__explainer-item">
                 <div className="analyzer__explainer-top">
-                  <AlertTriangle size={16} className="analyzer__explainer-icon analyzer__explainer-icon--red" />
+                  <AlertTriangle size={14} className="analyzer__explainer-icon analyzer__explainer-icon--red" />
                   <span className="analyzer__explainer-title">Packet Loss Rate</span>
                 </div>
                 <p className="analyzer__explainer-text">
-                  Fraction of transmitted datagrams that fail to arrive at recipient.
+                  Ratio of dropped packets across observation probe window.
                 </p>
                 <div className="analyzer__explainer-benchmark">
-                  <span>Transport SLA:</span>
-                  <strong>0.0% Optimal | &lt; 1% Good | &gt; 2% Packet Drops</strong>
+                  <span>Carrier SLA:</span>
+                  <strong>0.0% Carrier | &lt; 0.5% Normal | &gt; 2% Degraded</strong>
                 </div>
               </div>
 
               <div className="analyzer__explainer-item">
                 <div className="analyzer__explainer-top">
-                  <Wifi size={16} className="analyzer__explainer-icon analyzer__explainer-icon--cyan" />
+                  <Wifi size={14} className="analyzer__explainer-icon analyzer__explainer-icon--cyan" />
                   <span className="analyzer__explainer-title">Link Budget (RSSI)</span>
                 </div>
                 <p className="analyzer__explainer-text">
-                  Decibels relative to one milliwatt received at device radio interface.
+                  Decibels relative to 1 mW received signal power at radio antenna interface.
                 </p>
                 <div className="analyzer__explainer-benchmark">
-                  <span>Wireless Tier:</span>
-                  <strong>-30 to -55 dBm Strong | -55 to -75 Fair | &lt; -75 Weak</strong>
+                  <span>Radio Budget:</span>
+                  <strong>-30 to -55 dBm Strong | &lt; -75 dBm Fringe</strong>
                 </div>
               </div>
             </div>
 
             <div className="analyzer__side-notice">
-              <CheckCircle2 size={14} className="analyzer__icon-green" />
+              <ShieldCheck size={14} className="analyzer__icon-green" />
               <span>
-                Calculations feed into dual-task ML heuristics simulating continuous regression throughput.
+                Passive telemetry model trained on 120k transport-layer packet sessions.
               </span>
             </div>
           </div>

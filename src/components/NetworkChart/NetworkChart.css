@@ -1,11 +1,15 @@
 /* ================================================================
-   NetworkChart Component Styles
+   NetworkChart Component Styles — Osmo Supply Edition
    ================================================================ */
 
 .network-chart {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--sp-6);
 }
 
 .network-chart__header {
@@ -25,14 +29,14 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.02em;
 }
 
 .network-chart__title-icon {
-  color: var(--accent-cyan-light);
+  color: var(--accent-cyan);
 }
 
 .network-chart__subtitle {
@@ -52,17 +56,20 @@
   display: flex;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   padding: 2px;
 }
 
 .network-chart__range-btn {
-  padding: 4px 10px;
-  font-size: 12px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
-  border-radius: var(--radius-xs);
-  transition: all var(--duration-fast);
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--cubic-default);
 }
 
 .network-chart__range-btn:hover {
@@ -70,8 +77,14 @@
 }
 
 .network-chart__range-btn--active {
-  background: rgba(14, 165, 233, 0.15);
-  color: var(--accent-cyan-light);
+  background: var(--color-electric);
+  color: var(--color-electric-text);
+  font-weight: 700;
+}
+
+[data-theme="light"] .network-chart__range-btn--active {
+  background: #141313;
+  color: #ffffff;
 }
 
 /* ── Stats Strip ── */
@@ -79,10 +92,10 @@
   display: flex;
   align-items: center;
   gap: var(--sp-4);
-  padding: var(--sp-2) var(--sp-4);
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   flex-wrap: wrap;
 }
 
@@ -91,18 +104,23 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
+  font-family: var(--font-mono);
 }
 
 .network-chart__stat-icon--cyan {
-  color: #0ea5e9;
+  color: var(--accent-cyan);
 }
 
 .network-chart__stat-icon--emerald {
-  color: #10b981;
+  color: var(--color-electric);
+}
+
+[data-theme="light"] .network-chart__stat-icon--emerald {
+  color: #059669;
 }
 
 .network-chart__stat-icon--indigo {
-  color: #818cf8;
+  color: var(--accent-purple);
 }
 
 .network-chart__stat-label {
@@ -112,7 +130,7 @@
 .network-chart__stat-value {
   color: var(--text-primary);
   font-weight: 700;
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .network-chart__toggles {
@@ -122,32 +140,44 @@
 }
 
 .network-chart__toggle-pill {
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: var(--radius-xs);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
-  color: var(--text-dim);
+  color: var(--text-muted);
   background: transparent;
-  transition: all var(--duration-fast);
+  transition: all var(--duration-fast) var(--cubic-default);
+}
+
+.network-chart__toggle-pill:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
 }
 
 .network-chart__toggle-pill--active-cyan {
-  color: #38bdf8;
-  border-color: rgba(14, 165, 233, 0.4);
-  background: rgba(14, 165, 233, 0.1);
+  color: var(--accent-cyan);
+  border-color: rgba(0, 229, 255, 0.4);
+  background: rgba(0, 229, 255, 0.08);
 }
 
 .network-chart__toggle-pill--active-emerald {
-  color: #34d399;
+  color: var(--color-electric);
+  border-color: rgba(199, 255, 0, 0.4);
+  background: rgba(199, 255, 0, 0.08);
+}
+
+[data-theme="light"] .network-chart__toggle-pill--active-emerald {
+  color: #059669;
   border-color: rgba(16, 185, 129, 0.4);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .network-chart__toggle-pill--active-indigo {
-  color: #a5b4fc;
-  border-color: rgba(129, 140, 248, 0.4);
-  background: rgba(129, 140, 248, 0.1);
+  color: var(--accent-purple);
+  border-color: rgba(157, 101, 255, 0.4);
+  background: rgba(157, 101, 255, 0.08);
 }
 
 .network-chart__body {

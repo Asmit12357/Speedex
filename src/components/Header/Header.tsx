@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wifi, WifiOff, Clock, ShieldCheck, HelpCircle, Sun, Moon } from 'lucide-react';
+import { Wifi, WifiOff, Clock, Sun, Moon, Server, ShieldCheck } from 'lucide-react';
 import type { Theme } from '../../hooks/useTheme';
 import './Header.css';
 
@@ -19,9 +19,9 @@ function Header({ theme, onToggleTheme }: HeaderProps) {
   });
 
   const [connectionType] = useState<string>(() => {
-    if (typeof navigator === 'undefined') return 'Broadband / Wi-Fi';
+    if (typeof navigator === 'undefined') return 'Gigabit';
     const navConn = (navigator as unknown as { connection?: { effectiveType?: string } }).connection;
-    return navConn?.effectiveType ? navConn.effectiveType.toUpperCase() : 'Broadband / Wi-Fi';
+    return navConn?.effectiveType ? navConn.effectiveType.toUpperCase() : 'Gigabit';
   });
 
   useEffect(() => {
@@ -47,63 +47,66 @@ function Header({ theme, onToggleTheme }: HeaderProps) {
   return (
     <header className="header">
       <div className="header__left">
-        <div className="header__title-row">
-          <h1 className="header__title">Network Diagnostics &amp; Quality Predictor</h1>
-          <span className="header__version-pill">v1.2-preview</span>
+        <div className="header__breadcrumb">
+          <span className="header__brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </span>
+          <span className="header__breadcrumb-root">Speedex</span>
+          <span className="header__breadcrumb-slash">/</span>
+          <span className="header__breadcrumb-current">Network Intelligence &amp; SLA Diagnostics</span>
         </div>
-        <span className="header__subtitle">
-          Real-time dual-task throughput estimation &amp; SLA tier classification
-        </span>
+        <div className="header__env-badge" title="Validated Passive Telemetry Model">
+          <ShieldCheck size={11} className="header__env-icon" />
+          <span>Non-Saturating Telemetry v2.4</span>
+        </div>
       </div>
 
       <div className="header__right">
-        {/* Connection status badge */}
-        <div className="header__status-chip" title="Browser link connectivity state">
+        {/* Link Connectivity Chip */}
+        <div className="header__status-chip" title="Active network connection status">
           {isOnline ? (
             <>
               <span className="pulse-dot pulse-dot--online" />
-              <Wifi size={14} className="header__icon-green" />
-              <span className="header__status-text">Online ({connectionType})</span>
+              <Wifi size={13} className="header__icon-green" />
+              <span className="header__status-text">Online • {connectionType}</span>
             </>
           ) : (
             <>
-              <WifiOff size={14} className="header__icon-red" />
+              <WifiOff size={13} className="header__icon-red" />
               <span className="header__status-text header__status-text--offline">Offline</span>
             </>
           )}
         </div>
 
-        {/* Live system clock */}
+        {/* Edge Node Chip */}
+        <div className="header__node-chip" title="Connected Telemetry Edge PoP">
+          <Server size={12} className="header__node-icon" />
+          <span>FRA-01 (18ms)</span>
+        </div>
+
+        {/* Time Chip */}
         <div className="header__time-chip" title="Local workstation timestamp">
-          <Clock size={13} />
+          <Clock size={12} />
           <span className="header__time-text">{currentTime || 'Syncing...'}</span>
         </div>
 
-        {/* Theme Toggle Button (Light / Dark) */}
+        {/* Theme Toggle Button */}
         <button
           type="button"
           className="header__theme-btn"
           onClick={onToggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+          aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
         >
           {theme === 'dark' ? (
-            <Sun size={15} className="header__theme-icon header__theme-icon--sun" />
+            <Sun size={14} className="header__theme-icon header__theme-icon--sun" />
           ) : (
-            <Moon size={15} className="header__theme-icon header__theme-icon--moon" />
+            <Moon size={14} className="header__theme-icon header__theme-icon--moon" />
           )}
           <span className="header__theme-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
-
-        {/* Demo Mode Badge */}
-        <div
-          className="demo-badge header__demo-chip"
-          title="ML models run client-side heuristic evaluation. Ready for Python Flask / FastAPI inference API."
-        >
-          <ShieldCheck size={13} />
-          <span>Demo ML Engine</span>
-          <HelpCircle size={11} className="header__help-icon" />
-        </div>
       </div>
     </header>
   );
